@@ -6,7 +6,10 @@
 #include "semphr.h"
 
 SemaphoreHandle_t gTapSemaphore = NULL;
-static volatile TickType_t sLastTapTick = 0;
+static volatile TickType_t debounceLastTapTick = 0;
+static volatile TickType_t doubleTapLastTapTick = 0;
+static volatile TickType_t now = 0;
+static volatile int possibleDoubleTap = 0;
 
 void TAP_Init(void) {
     SIM->SCGC5 |= TAP_PORT_CLOCK_MASK;
@@ -29,29 +32,46 @@ void TAP_Init(void) {
 void PORTC_PORTD_IRQHandler(void) {
     if (TAP_PORT->ISFR & (1u << TAP_PIN)) {
         TAP_PORT->ISFR = (1u << TAP_PIN);
-        TickType_t now = xTaskGetTickCountFromISR();
-        if ((now - sLastTapTick) > pdMS_TO_TICKS(TAP_DEBOUNCE_MS)) {
-            sLastTapTick = now;
+        now = xTaskGetTickCountFromISR();
+        if ((now - debounceLastTapTick) > pdMS_TO_TICKS(TAP_DEBOUNCE_MS)) {
+            debounceLastTapTick = now;
+			BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+			xSemaphoreGiveFromISR(gTapSemaphore, &xHigherPriorityTaskWoken);
+			portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 
-            BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-            xSemaphoreGiveFromISR(gTapSemaphore, &xHigherPriorityTaskWoken);
-            portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
         }
     }
 }
 
 void vTapTask(void *pvParameters) {
     (void)pvParameters;
-    int focusSnapshot = 0;
 
     while (1) {
-        if (xSemaphoreTake(gTapSemaphore, portMAX_DELAY) == pdTRUE) {
-            if (xSemaphoreTake(gSensorMutex, pdMS_TO_TICKS(10)) == pdTRUE) {
-                gSensorData.tap_event = 1;
-                gSensorData.focus_mode ^= 1;
-                focusSnapshot = gSensorData.focus_mode;
-                xSemaphoreGive(gSensorMutex);
+        // Block until first tap
+        if (xSemaphoreTake(gTapSemaphore, portMAX_DELAY) != pdTRUE) {
+            continue;
+        }
+
+        // Wait for possible second tap — do NOT hold mutex here (prevents deadlock)
+        BaseType_t secondTap = xSemaphoreTake(gTapSemaphore, pdMS_TO_TICKS(TAP_DOUBLE_TAP_MS_UL));
+
+        // Only take mutex briefly to update shared data
+        if (xSemaphoreTake(gSensorMutex, pdMS_TO_TICKS(10)) == pdTRUE) {
+            if (secondTap == pdTRUE) {
+                // Double tap: toggle on/off
+                gSensorData.on_off ^= 1;
+                // Clear paused when turning off
+                if (!gSensorData.on_off) {
+                    gSensorData.paused = 0;
+                }
+            } else {
+                // Single tap: pause only if on
+                if (gSensorData.on_off) {
+                    gSensorData.paused ^= 1;
+                }
             }
+            gSensorData.tap_event = 1;
+            xSemaphoreGive(gSensorMutex);
         }
     }
 }

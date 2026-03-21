@@ -72,9 +72,6 @@ static void adc_calibrate(void)
     NVIC_EnableIRQ(ADC0_IRQn);
 }
 
-/* -----------------------------------------------------------------------
- * Public: sound_sensor_init  (RM 23.6.1.1)
- * ----------------------------------------------------------------------- */
 void sound_sensor_init(void)
 {
     SIM->SCGC5 |= SIM_SCGC5_PORTB_MASK;
@@ -115,7 +112,7 @@ uint16_t sound_sensor_read(void)
     /* Single atomic write — no interrupt for polling */
     ADC0->SC1[0] = ADC_SC1_ADCH(SOUND_ADC_CHANNEL);
 
-    while ((ADC0->SC1[0] & ADC_SC1_COCO_MASK) == 0U) {}
+    while ((ADC0->SC1[0] & ADC_SC1_COCO_MASK) == 0U);
 
     return (uint16_t)(ADC0->R[0] & 0x0FFFU);
 }
@@ -137,14 +134,15 @@ void vSoundTask(void *pvParameters)
     bool     latched   = false;
 
     /* ---- Phase 1: Calibration ---- */
-    xSemaphoreTake(gADCMutex, portMAX_DELAY);
     sound_sensor_init();
     PRINTF("Sound: calibrating 5s...\r\n");
 
     for (uint32_t t = 0U; t < CAL_TIME_MS; t += SAMPLE_DELAY_MS)
     {
+        xSemaphoreTake(gADCMutex, portMAX_DELAY);
         sample = sound_sensor_read();
-        sum   += sample;
+        xSemaphoreGive(gADCMutex);
+        sum += sample;
         count++;
         vTaskDelay(pdMS_TO_TICKS(SAMPLE_DELAY_MS));
     }

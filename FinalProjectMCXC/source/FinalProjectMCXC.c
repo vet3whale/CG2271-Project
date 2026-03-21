@@ -22,7 +22,7 @@ int main(void) {
     TAP_Init();
 
     xTaskCreate(LIGHT_SENSOR_Task, "Light",  256, NULL, 2, NULL);
-    xTaskCreate(vTapTask, "Tap", 256, NULL, 3, NULL);
+    xTaskCreate(vTapTask, "Tap", 256, NULL, 4, NULL);
     xTaskCreate(vSoundTask, "Sound", 512, NULL, 1, NULL);
 
     xTaskCreate(vPrintTask, "Print", 256, NULL, 3, NULL);

@@ -5,7 +5,7 @@
 
 SemaphoreHandle_t gSensorMutex = NULL;
 SemaphoreHandle_t gADCMutex = NULL;
-volatile SensorData_t gSensorData = { 0, 0, 0, 0, 0 };
+volatile SensorData_t gSensorData = { 0, 0, 0, 0, 0, 0 };
 
 void vPrintTask(void *pvParameters) {
     (void)pvParameters;
@@ -17,7 +17,8 @@ void vPrintTask(void *pvParameters) {
             localData.sound_raw       = gSensorData.sound_raw;
             localData.tap_event       = gSensorData.tap_event;
             localData.sound_triggered = gSensorData.sound_triggered;
-            localData.focus_mode      = gSensorData.focus_mode;
+            localData.on_off          = gSensorData.on_off;
+            localData.paused          = gSensorData.paused;
 
             /* Clear transients */
             gSensorData.tap_event = 0;
@@ -31,7 +32,8 @@ void vPrintTask(void *pvParameters) {
         PRINTF("Sound (raw) : %u\r\n", localData.sound_raw);
         PRINTF("Tap Event   : %s\r\n", localData.tap_event ? "YES" : "NO");
         PRINTF("Sound Event : %s\r\n", localData.sound_triggered ? "YES" : "NO");
-        PRINTF("Focus Mode  : %d\r\n", localData.focus_mode);
+        PRINTF("ON / OFF    : %d\r\n", localData.on_off);
+        PRINTF("Pause       : %d\r\n", localData.paused);
         PRINTF("---------------------\r\n\r\n");
 
         vTaskDelay(pdMS_TO_TICKS(200));

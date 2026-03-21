@@ -11,7 +11,9 @@
 #define TAP_GPIO             PTD
 #define TAP_PORT_CLOCK_MASK  SIM_SCGC5_PORTD_MASK
 #define TAP_IRQn             PORTC_PORTD_IRQn
-#define TAP_DEBOUNCE_MS      300U
+#define TAP_DEBOUNCE_MS      100U
+#define TAP_DOUBLE_TAP_MS_UL 400U
+
 
 extern SemaphoreHandle_t gTapSemaphore;
 extern volatile uint32_t g_sysTick_ms;

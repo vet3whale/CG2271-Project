@@ -7,7 +7,8 @@
 
 typedef struct {
     int tap_event;
-    int focus_mode;
+    int on_off;
+    int paused;
     uint16_t light_raw;
     uint16_t sound_raw;
     uint8_t  sound_triggered;
