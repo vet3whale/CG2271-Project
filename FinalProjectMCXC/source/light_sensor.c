@@ -29,9 +29,9 @@ void initLightADC(void)
     ADC0->SC1[0] &= ~ADC_SC1_DIFF_MASK;
     ADC0->SC1[0] |= ADC_SC1_DIFF(0b0);
 
-    /* 12-bit conversion — MODE=01 */
+    /* 16-bit conversion — MODE=11 */
     ADC0->CFG1 &= ~ADC_CFG1_MODE_MASK;
-    ADC0->CFG1 |= ADC_CFG1_MODE(0b01);
+    ADC0->CFG1 |= ADC_CFG1_MODE(0b11);
 
     /* Software trigger — ADTRG=0 */
     ADC0->SC2 &= ~ADC_SC2_ADTRG_MASK;

@@ -12,9 +12,7 @@ source/shared_data.o source/shared_data.d: ../source/shared_data.c \
  C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\freertos\freertos-kernel\include/queue.h \
  C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\freertos\freertos-kernel\include/task.h \
  C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\freertos\freertos-kernel\include/list.h \
- C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\utilities\debug_console/fsl_debug_console.h \
- C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\drivers/fsl_common.h \
- C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\device/fsl_device_registers.h \
+ ../source/led.h \
  C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\device/MCXC444.h \
  C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\device\periph2/PERI_ADC.h \
  C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\device/MCXC444_COMMON.h \
@@ -58,13 +56,17 @@ source/shared_data.o source/shared_data.d: ../source/shared_data.c \
  C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\device\periph2/PERI_UART.h \
  C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\device\periph2/PERI_USB.h \
  C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\device\periph2/PERI_VREF.h \
+ C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\freertos\freertos-kernel\include/task.h \
+ C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\utilities\debug_console/fsl_debug_console.h \
+ C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\drivers/fsl_common.h \
+ C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\device/fsl_device_registers.h \
+ C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\device/MCXC444.h \
  C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\drivers/fsl_common_arm.h \
  C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\drivers/fsl_clock.h \
  C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\drivers/fsl_common.h \
  C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\component\serial_manager/fsl_component_serial_manager.h \
  C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\component\serial_manager/fsl_component_serial_port_uart.h \
- C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\component\uart/fsl_adapter_uart.h \
- C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\freertos\freertos-kernel\include/task.h
+ C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\component\uart/fsl_adapter_uart.h
 ../source/shared_data.h:
 C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\freertos\freertos-kernel\include/FreeRTOS.h:
 C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\freertos\freertos-kernel\template/FreeRTOSConfig.h:
@@ -78,9 +80,7 @@ C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalPr
 C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\freertos\freertos-kernel\include/queue.h:
 C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\freertos\freertos-kernel\include/task.h:
 C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\freertos\freertos-kernel\include/list.h:
-C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\utilities\debug_console/fsl_debug_console.h:
-C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\drivers/fsl_common.h:
-C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\device/fsl_device_registers.h:
+../source/led.h:
 C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\device/MCXC444.h:
 C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\device\periph2/PERI_ADC.h:
 C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\device/MCXC444_COMMON.h:
@@ -124,10 +124,14 @@ C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalPr
 C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\device\periph2/PERI_UART.h:
 C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\device\periph2/PERI_USB.h:
 C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\device\periph2/PERI_VREF.h:
+C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\freertos\freertos-kernel\include/task.h:
+C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\utilities\debug_console/fsl_debug_console.h:
+C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\drivers/fsl_common.h:
+C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\device/fsl_device_registers.h:
+C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\device/MCXC444.h:
 C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\drivers/fsl_common_arm.h:
 C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\drivers/fsl_clock.h:
 C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\drivers/fsl_common.h:
 C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\component\serial_manager/fsl_component_serial_manager.h:
 C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\component\serial_manager/fsl_component_serial_port_uart.h:
 C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\component\uart/fsl_adapter_uart.h:
-C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\freertos\freertos-kernel\include/task.h:

@@ -35,9 +35,11 @@ void PORTC_PORTD_IRQHandler(void) {
         now = xTaskGetTickCountFromISR();
         if ((now - debounceLastTapTick) > pdMS_TO_TICKS(TAP_DEBOUNCE_MS)) {
             debounceLastTapTick = now;
-			BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-			xSemaphoreGiveFromISR(gTapSemaphore, &xHigherPriorityTaskWoken);
-			portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+            if (!(TAP_GPIO->PDIR & (1u << TAP_PIN))) {
+				BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+				xSemaphoreGiveFromISR(gTapSemaphore, &xHigherPriorityTaskWoken);
+				portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+			}
 
         }
     }
@@ -51,7 +53,7 @@ void vTapTask(void *pvParameters) {
         if (xSemaphoreTake(gTapSemaphore, portMAX_DELAY) != pdTRUE) {
             continue;
         }
-
+        while (xSemaphoreTake(gTapSemaphore, 0) == pdTRUE);
         // Wait for possible second tap — do NOT hold mutex here (prevents deadlock)
         BaseType_t secondTap = xSemaphoreTake(gTapSemaphore, pdMS_TO_TICKS(TAP_DOUBLE_TAP_MS_UL));
 

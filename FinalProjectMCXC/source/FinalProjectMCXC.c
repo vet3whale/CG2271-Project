@@ -9,6 +9,7 @@
 
 #include "light_sensor.h"
 #include "tap.h"
+#include "led.h"
 #include "sound_sensor.h"
 
 int main(void) {
@@ -20,11 +21,13 @@ int main(void) {
     gSensorMutex = xSemaphoreCreateMutex();
     gADCMutex = xSemaphoreCreateMutex();
     TAP_Init();
+    led_init();
 
     xTaskCreate(LIGHT_SENSOR_Task, "Light",  256, NULL, 2, NULL);
     xTaskCreate(vTapTask, "Tap", 256, NULL, 4, NULL);
     xTaskCreate(vSoundTask, "Sound", 512, NULL, 1, NULL);
 
+    xTaskCreate(vLEDTask, "LED", 128, NULL, 2, NULL);
     xTaskCreate(vPrintTask, "Print", 256, NULL, 3, NULL);
 
     vTaskStartScheduler();

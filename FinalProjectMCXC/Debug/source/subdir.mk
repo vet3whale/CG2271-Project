@@ -5,6 +5,7 @@
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
 ../source/FinalProjectMCXC.c \
+../source/led.c \
 ../source/light_sensor.c \
 ../source/mtb.c \
 ../source/semihost_hardfault.c \
@@ -14,6 +15,7 @@ C_SRCS += \
 
 C_DEPS += \
 ./source/FinalProjectMCXC.d \
+./source/led.d \
 ./source/light_sensor.d \
 ./source/mtb.d \
 ./source/semihost_hardfault.d \
@@ -23,6 +25,7 @@ C_DEPS += \
 
 OBJS += \
 ./source/FinalProjectMCXC.o \
+./source/led.o \
 ./source/light_sensor.o \
 ./source/mtb.o \
 ./source/semihost_hardfault.o \
@@ -43,7 +46,7 @@ source/%.o: ../source/%.c source/subdir.mk
 clean: clean-source
 
 clean-source:
-	-$(RM) ./source/FinalProjectMCXC.d ./source/FinalProjectMCXC.o ./source/light_sensor.d ./source/light_sensor.o ./source/mtb.d ./source/mtb.o ./source/semihost_hardfault.d ./source/semihost_hardfault.o ./source/shared_data.d ./source/shared_data.o ./source/sound_sensor.d ./source/sound_sensor.o ./source/tap.d ./source/tap.o
+	-$(RM) ./source/FinalProjectMCXC.d ./source/FinalProjectMCXC.o ./source/led.d ./source/led.o ./source/light_sensor.d ./source/light_sensor.o ./source/mtb.d ./source/mtb.o ./source/semihost_hardfault.d ./source/semihost_hardfault.o ./source/shared_data.d ./source/shared_data.o ./source/sound_sensor.d ./source/sound_sensor.o ./source/tap.d ./source/tap.o
 
 .PHONY: clean-source
 
