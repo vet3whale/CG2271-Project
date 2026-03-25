@@ -8,9 +8,9 @@
 
 /* PTB1 = TPM1_CH1 (ALT3) */
 #define LED_TPM             TPM1
-#define LED_TPM_CHANNEL     0U
+#define LED_TPM_CHANNEL     1U
 #define LED_PORT            PORTE
-#define LED_PIN             20U
+#define LED_PIN             21U
 #define LED_PORT_CLK        SIM_SCGC5_PORTE_MASK
 #define LED_TPM_CLK         SIM_SCGC6_TPM1_MASK
 #define LED_MUX             3U          /* ALT3 = TPM1_CH0 on PTE20 */

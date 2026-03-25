@@ -41,7 +41,7 @@ static void adc_calibrate(void){
     if ((ADC0->SC3 & ADC_SC3_CALF_MASK) != 0U)
     {
         ADC0->SC3 |= ADC_SC3_CALF_MASK;
-        PRINTF("[ADC] Calibration FAILED\r\n");
+        // PRINTF("[ADC] Calibration FAILED\r\n");
         return;
     }
 
@@ -69,7 +69,7 @@ static void adc_calibrate(void){
     cal_var  |= 0x8000U;
     ADC0->MG  = (uint32_t)cal_var;
 
-    PRINTF("[ADC] Calibration OK\r\n");
+    // PRINTF("[ADC] Calibration OK\r\n");
     NVIC_EnableIRQ(ADC0_IRQn);
 }
 
@@ -143,7 +143,7 @@ void vSoundTask(void *pvParameters){
     /* ---- Phase 1: Calibration ---- */
     xSemaphoreTake(gADCMutex, portMAX_DELAY); // light sensor starved
     sound_sensor_init();
-    PRINTF("Sound: calibrating 5s...\r\n");
+    // PRINTF("Sound: calibrating 5s...\r\n");
 
     for (uint32_t t = 0U; t < CAL_TIME_MS; t += SAMPLE_DELAY_MS)
     {
@@ -156,7 +156,7 @@ void vSoundTask(void *pvParameters){
     baseline = (uint16_t)(sum / count);
     xSemaphoreGive(gADCMutex);
 
-    PRINTF("Sound: baseline=%u  trigger_delta=%u\r\n\r\n", baseline, TRIGGER_DELTA);
+    // PRINTF("Sound: baseline=%u  trigger_delta=%u\r\n\r\n", baseline, TRIGGER_DELTA);
 
     /* ---- Phase 2: Peak-to-peak monitoring ---- */
     while (1)

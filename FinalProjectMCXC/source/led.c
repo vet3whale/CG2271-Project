@@ -11,7 +11,9 @@ static void led_on(void)
 
 static void led_off(void)
 {
-    LED_TPM->CONTROLS[LED_TPM_CHANNEL].CnV = 0U;
+	LED_TPM->SC &= ~TPM_SC_CMOD_MASK;
+	LED_TPM->CONTROLS[LED_TPM_CHANNEL].CnV = 0U;
+
 }
 
 void led_init(void)
@@ -34,37 +36,23 @@ void led_init(void)
     LED_TPM->SC  = TPM_SC_PS(TPM1_PS);
 
     LED_TPM->CONTROLS[LED_TPM_CHANNEL].CnSC =
-        TPM_CnSC_MSB_MASK | TPM_CnSC_ELSA_MASK;
+        TPM_CnSC_MSB_MASK | TPM_CnSC_ELSB_MASK;   // high-true EPWM
     LED_TPM->CONTROLS[LED_TPM_CHANNEL].CnV  = 0U;   /* off at start */
 }
 
 void vLEDTask(void *pvParameters)
 {
     (void)pvParameters;
-    int prevState = -1;
 
     while (1)
     {
-        int running = 0;
-
-        if (xSemaphoreTake(gSensorMutex, pdMS_TO_TICKS(10)) == pdTRUE)
-        {
-            running = (gSensorData.on_off == 1) && (gSensorData.paused == 0);
-            xSemaphoreGive(gSensorMutex);
+        if (led_state) {
+            led_on();
+            PRINTF("[LED] ON\r\n");
+        } else {
+        	led_off();
+        	PRINTF("[LED] OFF\r\n");
         }
-
-        if (running != prevState)
-        {
-            if (running) {
-                led_on();
-                PRINTF("[LED] ON\r\n");
-            } else {
-                led_off();
-                PRINTF("[LED] OFF\r\n");
-            }
-            prevState = running;
-        }
-
         vTaskDelay(pdMS_TO_TICKS(LED_POLL_MS));
     }
 }

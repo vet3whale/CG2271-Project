@@ -15,7 +15,7 @@
 #define SOUND_SENSOR_H
 
 #include <stdint.h>
-#include "MCXC444.h"
+#include "board.h"
 #include "FreeRTOS.h"
 #include "task.h"
 

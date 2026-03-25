@@ -11,7 +11,9 @@ C_SRCS += \
 ../source/semihost_hardfault.c \
 ../source/shared_data.c \
 ../source/sound_sensor.c \
-../source/tap.c 
+../source/tap.c \
+../source/uart_rx.c \
+../source/uart_tx.c 
 
 C_DEPS += \
 ./source/FinalProjectMCXC.d \
@@ -21,7 +23,9 @@ C_DEPS += \
 ./source/semihost_hardfault.d \
 ./source/shared_data.d \
 ./source/sound_sensor.d \
-./source/tap.d 
+./source/tap.d \
+./source/uart_rx.d \
+./source/uart_tx.d 
 
 OBJS += \
 ./source/FinalProjectMCXC.o \
@@ -31,7 +35,9 @@ OBJS += \
 ./source/semihost_hardfault.o \
 ./source/shared_data.o \
 ./source/sound_sensor.o \
-./source/tap.o 
+./source/tap.o \
+./source/uart_rx.o \
+./source/uart_tx.o 
 
 
 # Each subdirectory must supply rules for building sources it contributes
@@ -46,7 +52,7 @@ source/%.o: ../source/%.c source/subdir.mk
 clean: clean-source
 
 clean-source:
-	-$(RM) ./source/FinalProjectMCXC.d ./source/FinalProjectMCXC.o ./source/led.d ./source/led.o ./source/light_sensor.d ./source/light_sensor.o ./source/mtb.d ./source/mtb.o ./source/semihost_hardfault.d ./source/semihost_hardfault.o ./source/shared_data.d ./source/shared_data.o ./source/sound_sensor.d ./source/sound_sensor.o ./source/tap.d ./source/tap.o
+	-$(RM) ./source/FinalProjectMCXC.d ./source/FinalProjectMCXC.o ./source/led.d ./source/led.o ./source/light_sensor.d ./source/light_sensor.o ./source/mtb.d ./source/mtb.o ./source/semihost_hardfault.d ./source/semihost_hardfault.o ./source/shared_data.d ./source/shared_data.o ./source/sound_sensor.d ./source/sound_sensor.o ./source/tap.d ./source/tap.o ./source/uart_rx.d ./source/uart_rx.o ./source/uart_tx.d ./source/uart_tx.o
 
 .PHONY: clean-source
 

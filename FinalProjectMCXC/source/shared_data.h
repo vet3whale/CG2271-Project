@@ -17,6 +17,7 @@ typedef struct {
 extern SemaphoreHandle_t gSensorMutex;
 extern SemaphoreHandle_t gADCMutex;
 extern volatile SensorData_t gSensorData;
+extern volatile int led_state;
 
 void vPrintTask(void *pvParameters);
 

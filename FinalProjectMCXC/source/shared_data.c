@@ -8,6 +8,7 @@
 SemaphoreHandle_t gSensorMutex = NULL;
 SemaphoreHandle_t gADCMutex = NULL;
 volatile SensorData_t gSensorData = { 0, 0, 0, 0, 0, 0 };
+volatile int led_state = 0;
 
 void vPrintTask(void *pvParameters) {
     (void)pvParameters;

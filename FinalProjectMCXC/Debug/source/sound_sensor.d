@@ -70,9 +70,7 @@ source/sound_sensor.o source/sound_sensor.d: ../source/sound_sensor.c \
  C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\freertos\freertos-kernel\include/semphr.h \
  C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\freertos\freertos-kernel\include/queue.h \
  C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\freertos\freertos-kernel\include/task.h \
- ../source/sound_sensor.h \
- C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\device/MCXC444.h \
- ../source/shared_data.h
+ ../source/sound_sensor.h ../source/shared_data.h
 C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\board/board.h:
 C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\board/clock_config.h:
 C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\drivers/fsl_common.h:
@@ -145,5 +143,4 @@ C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalPr
 C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\freertos\freertos-kernel\include/queue.h:
 C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\freertos\freertos-kernel\include/task.h:
 ../source/sound_sensor.h:
-C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\device/MCXC444.h:
 ../source/shared_data.h:

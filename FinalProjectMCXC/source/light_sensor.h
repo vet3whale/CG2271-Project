@@ -6,8 +6,8 @@
 #include "task.h"
 #include "queue.h"
 
-#define LIGHT_ADC_CHANNEL   3U   /* ADC0_SE3 → PTE22 */
-#define LIGHT_ADC_PIN       22   /* PTE22             */
+#define LIGHT_ADC_CHANNEL   0U   /* ADC0_SE3 → PTE22 */
+#define LIGHT_ADC_PIN       20   /* PTE22             */
 
 extern QueueHandle_t xLightQueue;
 extern volatile int lightResult;
