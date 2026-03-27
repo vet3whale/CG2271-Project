@@ -8,6 +8,7 @@
 #include "uart_rx.h"
 #include "uart_tx.h"
 #include "api_handler.h"
+#include "telegram_tx.h"
 
 /* ── Shared handles ──────────────────────────────────────────────────────── */
 SensorData_t      gSensorData  = {0};
@@ -42,20 +43,24 @@ void vGeminiTestTask(void *pvParameters) {
 
 void setup() {
     Serial.begin(115200);
-    delay(1000);
+    delay(3000);
 
     gSensorMutex = xSemaphoreCreateMutex();
-
+    Serial.println("asdas");
     DHT_Init();
     LED_RX_Init();
     UART_RX_Init();
-    UART_TX_Init();
+    UART_TX_Init();  
+    Telegram_Init();
     connectWiFi(); 
 
-    xTaskCreate(vDHTTask,      "DHT",      DHT_TASK_STACK_SIZE, NULL, DHT_TASK_PRIORITY, NULL);
-    xTaskCreate(vMonitorTask,  "Monitor",  2048,                NULL, 1,                 NULL);
-    xTaskCreate(vSerialRxTask, "SerialRX", 2048,                NULL, 3,                 NULL);
-    xTaskCreate(vUartRxTask,   "UartRX",   4096,                NULL, 4,                 NULL);
+    xTaskCreate(vTelegramTask, "Telegram", TELEGRAM_TASK_STACK_SIZE, NULL, TELEGRAM_TASK_PRIORITY, NULL);
+
+    xTaskCreate(vDHTTask,      "DHT",      DHT_TASK_STACK_SIZE, NULL, TELEGRAM_TASK_PRIORITY, NULL);
+    xTaskCreate(vMonitorTask,  "Monitor",  2048,                NULL, TELEGRAM_TASK_PRIORITY,                 NULL);
+    xTaskCreate(vSerialRxTask, "SerialRX", 2048,                NULL, TELEGRAM_TASK_PRIORITY,                 NULL);
+    // vLEDTask disabled — GPIO26 used by buzzer in vUartRxTask
+    xTaskCreate(vUartRxTask,   "UartRX",   4096,                NULL, TELEGRAM_TASK_PRIORITY,                 NULL);
     xTaskCreate(vGeminiTestTask, "GeminiTest", 8192,                NULL, 2,                 NULL);
 }
 
