@@ -4,3 +4,4 @@ ZephyrRTOS_TAD_logs/*
 AzureRTOS_TAD_logs/*
 .mcuxpressoide_packages_support/*
 .metadata/*
+FinalProjectESP32/main/passwords.h
