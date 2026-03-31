@@ -12,23 +12,20 @@ static void build_packet(uint8_t tap, uint8_t focus,
                          uint8_t triggered, uint8_t *pkt)
 {
     uint8_t chk = 0;
-    pkt[0]  = PACKET_START1;
-    pkt[1]  = PACKET_START2;
-    pkt[2]  = tap;
-    pkt[3]  = focus;
-    pkt[4]  = (uint8_t)(light >> 8);
-    pkt[5]  = (uint8_t)(light & 0xFF);
-    pkt[6]  = (uint8_t)(sound >> 8);
-    pkt[7]  = (uint8_t)(sound & 0xFF);
-    pkt[8]  = triggered;
+    pkt[0] = PACKET_START1;
+    pkt[1] = PACKET_START2;
+    pkt[2] = tap;
+    pkt[3] = focus;
+    pkt[4] = (uint8_t)(light >> 8); pkt[5] = (uint8_t)(light & 0xFF);
+    pkt[6] = (uint8_t)(sound >> 8); pkt[7] = (uint8_t)(sound & 0xFF);
+    pkt[8] = triggered;
     for (uint8_t i = 2; i <= 8; i++) chk ^= pkt[i];
-    pkt[9]  = chk;
+    pkt[9] = chk;
     pkt[10] = PACKET_END;
 }
 
 static void uart2_send_blocking(const uint8_t *buf, uint32_t len)
 {
-	// PRINTF("Sending Data");
     for (uint32_t i = 0; i < len; i++)
     {
     	while (!(UART2->S1 & UART_S1_TDRE_MASK)) {}
@@ -89,9 +86,8 @@ void vTxTask(void *pvParameters)
             light     = gSensorData.light_raw;
             sound     = gSensorData.sound_raw;
             triggered = gSensorData.sound_triggered;
-            if (tap) {
-				gSensorData.tap_event = 0;
-			}
+
+            if (tap) gSensorData.tap_event = 0;
             xSemaphoreGive(gSensorMutex);
         }
 

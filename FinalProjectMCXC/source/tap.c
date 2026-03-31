@@ -14,15 +14,12 @@ static volatile int possibleDoubleTap = 0;
 void TAP_Init(void) {
     SIM->SCGC5 |= TAP_PORT_CLOCK_MASK;
 
-    TAP_PORT->PCR[TAP_PIN] = PORT_PCR_MUX(1)
-                           | PORT_PCR_PE_MASK
-                           | PORT_PCR_PS_MASK
-                           | PORT_PCR_IRQC(0xA);
+    TAP_PORT->PCR[TAP_PIN] = PORT_PCR_MUX(1) | PORT_PCR_PE_MASK
+                           | PORT_PCR_PS_MASK | PORT_PCR_IRQC(0xA);
 
     TAP_GPIO->PDDR &= ~(1u << TAP_PIN);
 
     gTapSemaphore = xSemaphoreCreateBinary();
-    configASSERT(gTapSemaphore != NULL);
 
     NVIC_SetPriority(TAP_IRQn, 0);
     NVIC_ClearPendingIRQ(TAP_IRQn);
@@ -54,7 +51,7 @@ void vTapTask(void *pvParameters) {
             continue;
         }
         while (xSemaphoreTake(gTapSemaphore, 0) == pdTRUE);
-        // Wait for possible second tap — do NOT hold mutex here (prevents deadlock)
+        // Wait for possible second tap
         BaseType_t secondTap = xSemaphoreTake(gTapSemaphore, pdMS_TO_TICKS(TAP_DOUBLE_TAP_MS_UL));
 
         // Only take mutex briefly to update shared data

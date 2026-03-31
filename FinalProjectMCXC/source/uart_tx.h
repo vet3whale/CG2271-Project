@@ -14,13 +14,13 @@
 #include "clock_config.h"
 #include "uart_packet.h"
 
-/* UART2 base: 0x4006C000
- * TX → PTD3, ALT3
- * RX → PTD2, ALT3        */
+/* TX → PTD3, ALT3
+ * RX → PTD2, ALT3
+*/
 
-#define UART_TX_PIN		22      /* PTE22 */
-#define UART_RX_PIN     23      /* PTE23 */
-#define MCXC_UART_BAUD   115200
+#define UART_TX_PIN	22 /* PTE22 */
+#define UART_RX_PIN 23 /* PTE23 */
+#define MCXC_UART_BAUD 115200
 
 
 void initUART2_RXTX(uint32_t baud_rate);
