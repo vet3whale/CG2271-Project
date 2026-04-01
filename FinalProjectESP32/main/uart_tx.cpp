@@ -32,6 +32,17 @@ void UART_TX_Init(void) {
 /*  SEND                                                                     */
 /* ═════════════════════════════════════════════════════════════════════════ */
 
+void sendTempPacket(int8_t temp_int, uint8_t temp_frac) {
+    uint8_t pkt[TEMP_PKT_LEN];
+    pkt[0] = PACKET_START1;
+    pkt[1] = TEMP_PKT_START2;          // 0x56
+    pkt[2] = (uint8_t)temp_int;
+    pkt[3] = temp_frac;
+    pkt[4] = TEMP_PKT_CHECKSUM(temp_int, temp_frac);
+    pkt[5] = PACKET_END;
+    Serial2.write(pkt, TEMP_PKT_LEN);  // adjust to your UART port
+}
+
 /*
  * UART_TX_SendCmd()
  *
