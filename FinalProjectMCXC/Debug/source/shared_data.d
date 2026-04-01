@@ -57,6 +57,7 @@ source/shared_data.o source/shared_data.d: ../source/shared_data.c \
  C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\device\periph2/PERI_USB.h \
  C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\device\periph2/PERI_VREF.h \
  C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\freertos\freertos-kernel\include/task.h \
+ ../source/uart_packet.h \
  C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\utilities\debug_console/fsl_debug_console.h \
  C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\drivers/fsl_common.h \
  C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\device/fsl_device_registers.h \
@@ -125,6 +126,7 @@ C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalPr
 C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\device\periph2/PERI_USB.h:
 C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\device\periph2/PERI_VREF.h:
 C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\freertos\freertos-kernel\include/task.h:
+../source/uart_packet.h:
 C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\utilities\debug_console/fsl_debug_console.h:
 C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\drivers/fsl_common.h:
 C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\device/fsl_device_registers.h:

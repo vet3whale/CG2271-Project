@@ -1,79 +1,62 @@
 #include <Arduino.h>
 #include "uart_tx.h"
-#include "uart_rx.h"       /* MCXC_UART_PORT, MCXC_UART_TXD_PIN */
-#include "uart_packet.h"   /* PACKET_START1, PACKET_START2, PACKET_END */
-
+#include "uart_rx.h"        /* MCXC_UART_PORT, MCXC_UART_TXD_PIN */
+#include "uart_packet.h"
 #include "driver/uart.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-/* ═════════════════════════════════════════════════════════════════════════ */
-/*  INIT                                                                     */
-/* ═════════════════════════════════════════════════════════════════════════ */
-
-/*
- * UART_TX_Init()
- *
- * The UART1 driver is already installed by UART_RX_Init().
- * This call adds GPIO16 as the active TX pin on that same driver instance.
- * Passing UART_PIN_NO_CHANGE for all other pins leaves RX/RTS/CTS alone.
- */
-void UART_TX_Init(void) {
+/* ── Init ───────────────────────────────────────────────────────────────── */
+void UART_TX_Init(void)
+{
     uart_set_pin(MCXC_UART_PORT,
-                 MCXC_UART_TXD_PIN,   /* TX — GPIO16 (now active)   */
-                 UART_PIN_NO_CHANGE,   /* RX — already set           */
-                 UART_PIN_NO_CHANGE,   /* RTS — not used             */
-                 UART_PIN_NO_CHANGE);  /* CTS — not used             */
-
+                 MCXC_UART_TXD_PIN,     /* TX — GPIO16 */
+                 UART_PIN_NO_CHANGE,     /* RX — already set */
+                 UART_PIN_NO_CHANGE,     /* RTS — not used */
+                 UART_PIN_NO_CHANGE);    /* CTS — not used */
     Serial.println("[UART_TX] TX enabled on GPIO" + String(MCXC_UART_TXD_PIN));
 }
 
-/* ═════════════════════════════════════════════════════════════════════════ */
-/*  SEND                                                                     */
-/* ═════════════════════════════════════════════════════════════════════════ */
-
-void sendTempPacket(int8_t temp_int, uint8_t temp_frac) {
-    uint8_t pkt[TEMP_PKT_LEN];
-    pkt[0] = PACKET_START1;
-    pkt[1] = TEMP_PKT_START2;          // 0x56
-    pkt[2] = (uint8_t)temp_int;
-    pkt[3] = temp_frac;
-    pkt[4] = TEMP_PKT_CHECKSUM(temp_int, temp_frac);
-    pkt[5] = PACKET_END;
-    Serial2.write(pkt, TEMP_PKT_LEN);  // adjust to your UART port
-}
-
-/*
- * UART_TX_SendCmd()
- *
- * Builds the 5-byte packet expected by MCXC444 vRXTask and writes it
- * to UART1 in a single uart_write_bytes() call (atomic at driver level).
- *
- * Packet layout:
- *   [0] PACKET_START1   0xAA
- *   [1] PACKET_START2   0x55
- *   [2] cmd             TX_CMD_LED_ON (0x01) or TX_CMD_LED_OFF (0x00)
- *   [3] checksum        cmd ^ 0xFF
- *   [4] PACKET_END      0xBB
- */
-void UART_TX_SendCmd(uint8_t cmd) {
+/* ── LED command packet (5 bytes) ───────────────────────────────────────── */
+void UART_TX_SendCmd(uint8_t cmd)
+{
     uint8_t pkt[TX_PKT_LEN] = {
-        PACKET_START1,        /* 0xAA */
-        PACKET_START2,        /* 0x55 */
+        PACKET_START1,
+        PACKET_START2,
         cmd,
-        TX_CHECKSUM(cmd),     /* cmd ^ 0xFF */
-        PACKET_END            /* 0xBB */
+        TX_CHECKSUM(cmd),
+        PACKET_END
     };
 
-    int written = uart_write_bytes(MCXC_UART_PORT,
-                                   (const char *)pkt,
-                                   TX_PKT_LEN);
-
+    int written = uart_write_bytes(MCXC_UART_PORT, (const char *)pkt, TX_PKT_LEN);
     if (written == TX_PKT_LEN) {
         Serial.print("[UART_TX] Sent cmd=0x");
         Serial.print(cmd, HEX);
-        Serial.println(cmd == TX_CMD_LED_ON ? "  (LED ON)" : "  (LED OFF)");
+        Serial.println(cmd == TX_CMD_LED_ON ? " (LED ON)" : " (LED OFF)");
     } else {
-        Serial.println("[UART_TX] Warning: packet write incomplete");
+        Serial.println("[UART_TX] Warning: LED packet write incomplete");
+    }
+}
+
+/* ── Temperature packet (6 bytes) ───────────────────────────────────────── */
+void UART_TX_SendTemp(int8_t temp_int, uint8_t temp_frac)
+{
+    uint8_t pkt[TEMP_PKT_LEN] = {
+        PACKET_START1,
+        TEMP_PKT_START2,                        /* 0x56 — distinguishes from LED */
+        (uint8_t)temp_int,
+        temp_frac,
+        TEMP_PKT_CHECKSUM(temp_int, temp_frac),
+        PACKET_END
+    };
+
+    int written = uart_write_bytes(MCXC_UART_PORT, (const char *)pkt, TEMP_PKT_LEN);
+    if (written == TEMP_PKT_LEN) {
+        Serial.print("[UART_TX] Sent temp: ");
+        Serial.print(temp_int);
+        Serial.print(".");
+        Serial.println(temp_frac);
+    } else {
+        Serial.println("[UART_TX] Warning: temp packet write incomplete");
     }
 }

@@ -1,5 +1,6 @@
 #include "shared_data.h"
 #include "led.h"
+#include "uart_packet.h"
 
 #include "fsl_debug_console.h"
 #include "FreeRTOS.h"
