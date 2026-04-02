@@ -17,7 +17,8 @@ typedef struct {
     uint16_t light_raw;         // ADC 0-1023
     uint16_t sound_raw;         // ADC 0-1023
     uint8_t  sound_triggered;   // 1 = sound event this cycle
-
+    uint8_t  env_condition;
+    
 } SensorData_t;
 
 extern SensorData_t      gSensorData;

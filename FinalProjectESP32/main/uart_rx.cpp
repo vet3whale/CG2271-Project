@@ -11,6 +11,20 @@
 
 /* ── Private helpers ─────────────────────────────────────────────────────── */
 
+static const char* envConditionStr(uint8_t cond)
+{
+    switch (cond) {
+        case ENV_GOOD:     return "GOOD";
+        case ENV_TOO_DARK: return "TOO DARK";
+        case ENV_TOO_LOUD: return "TOO LOUD";
+        case ENV_TOO_HOT:  return "TOO HOT";
+        case ENV_TOO_COLD: return "TOO COLD";
+        case ENV_MODERATE: return "MODERATE";
+        case ENV_POOR:     return "POOR";
+        default:           return "UNKNOWN";
+    }
+}
+
 /*
  * validateChecksum()
  * XOR of bytes [2..8] must equal byte [9]
@@ -18,10 +32,8 @@
  */
 static bool validateChecksum(uint8_t *pkt) {
     uint8_t chk = 0;
-    for (uint8_t i = 2; i <= 8; i++) {
-        chk ^= pkt[i];
-    }
-    return chk == pkt[9];
+    for (uint8_t i = 2; i <= 9; i++) chk ^= pkt[i];
+    return chk == pkt[11];
 }
 
 /*
@@ -36,7 +48,8 @@ static void parseAndStore(uint8_t *pkt) {
     uint16_t light     = ((uint16_t)pkt[4] << 8) | pkt[5];
     uint16_t sound     = ((uint16_t)pkt[6] << 8) | pkt[7];
     uint8_t  triggered = pkt[8];
-
+    uint8_t env_cond  = pkt[9];
+    uint8_t temp = pkt[10];
     /*
      * Send LED command back to MCXC444 on every valid packet.
      * focus_mode == 1 → LED ON (0x01)
@@ -51,6 +64,8 @@ static void parseAndStore(uint8_t *pkt) {
     Serial.print("  light_raw:       "); Serial.println(light);
     Serial.print("  sound_raw:       "); Serial.println(sound);
     Serial.print("  sound_triggered: "); Serial.println(triggered);
+    Serial.print("  env_cond: "); Serial.println(envConditionStr(env_cond));
+    Serial.print("  temp:     "); Serial.println(temp);
 
     if (xSemaphoreTake(gSensorMutex, pdMS_TO_TICKS(10)) == pdTRUE) {
         gSensorData.tap_event       = tap;
@@ -58,6 +73,7 @@ static void parseAndStore(uint8_t *pkt) {
         gSensorData.light_raw       = light;
         gSensorData.sound_raw       = sound;
         gSensorData.sound_triggered = triggered;
+        gSensorData.env_condition = env_cond;
         xSemaphoreGive(gSensorMutex);
     } else {
         Serial.println("[UART] Warning: could not take mutex — skipping write");

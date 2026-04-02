@@ -17,7 +17,7 @@
 /* [0] START1 [1] START2 [2] tap [3] focus [4] light_H [5] light_L
    [6] sound_H [7] sound_L [8] sound_triggered [9] env_condition
    [10] checksum XOR[2..9]  [11] END */
-#define PACKET_LEN      12U
+#define PACKET_LEN      13U
 
 /* ESP32 to MCXC LED command packet */
 /* [0] START1 [1] START2 [2] cmd [3] checksum [4] END */
