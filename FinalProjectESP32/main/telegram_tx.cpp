@@ -31,8 +31,12 @@ static void connectWiFiTele() {
 
 
 void Telegram_Init() {
-    connectWiFiTele();
-    bot.sendMessage(CHAT_ID, "ESP32 online!", "");
+    // connectWiFiTele();
+    if (WiFi.status() == WL_CONNECTED) {
+        client.setInsecure();
+        Serial.println("connected");
+        bot.sendMessage(CHAT_ID, "ESP32 online!", "");
+    }
 }
 
 void vTelegramTask(void *pvParameters) {

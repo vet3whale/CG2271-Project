@@ -28,17 +28,7 @@ static void printReading(float temp, float humidity)
     Serial.println("─────────────────────────────");
     Serial.print("Temp: ");     Serial.print(temp);     Serial.println(" C");
     Serial.print("Humidity: "); Serial.print(humidity); Serial.println(" %");
-    Serial.print("Temp change: ");
-    Serial.print(tempChange > 0 ? "+" : "");
-    Serial.print(tempChange);   Serial.println(" C");
-    Serial.print("Humidity change: ");
-    Serial.print(humChange  > 0 ? "+" : "");
-    Serial.print(humChange);    Serial.println(" %");
-    /* Status print — informational only, env logic is on MCXC */
-    Serial.print("Status: ");
-    if      (temp     > TEMP_ALERT) Serial.println("TOO HOT");
-    else if (humidity > HUM_ALERT)  Serial.println("TOO HUMID");
-    else                            Serial.println("OK");
+    Serial.println("─────────────────────────────");
 }
 
 /* ═════════════════════════════════════════════════════════════════════════ */

@@ -44,23 +44,18 @@ static bool validateChecksum(uint8_t *pkt) {
  */
 static void parseAndStore(uint8_t *pkt) {
     uint8_t  tap       = pkt[2];
-    uint8_t  focus     = pkt[3];
+    uint8_t  on_off     = pkt[3];
     uint16_t light     = ((uint16_t)pkt[4] << 8) | pkt[5];
     uint16_t sound     = ((uint16_t)pkt[6] << 8) | pkt[7];
     uint8_t  triggered = pkt[8];
     uint8_t env_cond  = pkt[9];
     uint8_t temp = pkt[10];
-    /*
-     * Send LED command back to MCXC444 on every valid packet.
-     * focus_mode == 1 → LED ON (0x01)
-     * focus_mode == 0 → LED OFF (0x00)
-     * MCXC444 vRXTask will pick this up and update gSensorData.on_off.
-     */
-    UART_TX_SendCmd(focus == 1 ? TX_CMD_LED_ON : TX_CMD_LED_OFF);
+
+    UART_TX_SendCmd(on_off == 1 ? TX_CMD_LED_ON : TX_CMD_LED_OFF);
 
     Serial.println("[UART] Valid packet received:");
     Serial.print("  tap_event:       "); Serial.println(tap);
-    Serial.print("  focus_mode:      "); Serial.println(focus);
+    Serial.print("  on_off_mode:     "); Serial.println(on_off);
     Serial.print("  light_raw:       "); Serial.println(light);
     Serial.print("  sound_raw:       "); Serial.println(sound);
     Serial.print("  sound_triggered: "); Serial.println(triggered);
@@ -69,7 +64,7 @@ static void parseAndStore(uint8_t *pkt) {
 
     if (xSemaphoreTake(gSensorMutex, pdMS_TO_TICKS(10)) == pdTRUE) {
         gSensorData.tap_event       = tap;
-        gSensorData.focus_mode      = focus;
+        gSensorData.on_off      = on_off;
         gSensorData.light_raw       = light;
         gSensorData.sound_raw       = sound;
         gSensorData.sound_triggered = triggered;
@@ -80,10 +75,6 @@ static void parseAndStore(uint8_t *pkt) {
     }
 
 }
-
-/* ═════════════════════════════════════════════════════════════════════════ */
-/*  PUBLIC FUNCTIONS                                                         */
-/* ═════════════════════════════════════════════════════════════════════════ */
 
 void UART_RX_Init(void) {
     /* LED setup */
@@ -118,18 +109,7 @@ void UART_RX_Init(void) {
                  UART_PIN_NO_CHANGE);  // CTS — not used
 
     Serial.println("[UART] Receiver initialised — RX only mode");
-    Serial.print("[UART] Listening on GPIO");
-    Serial.print(MCXC_UART_RXD_PIN);
-    Serial.print(" at ");
-    Serial.print(MCXC_UART_BAUD);
-    Serial.println(" baud");
-    Serial.print("[UART] LED indicator on GPIO");
-    Serial.println(MCXC_LED_PIN);
 }
-
-/* ═════════════════════════════════════════════════════════════════════════ */
-/*  TASK                                                                     */
-/* ═════════════════════════════════════════════════════════════════════════ */
 
 void vUartRxTask(void *pvParameters) {
     (void)pvParameters;

@@ -1,12 +1,12 @@
-#ifndef API_HANDLER_H
-#define API_HANDLER_H
+#ifndef GEMINI_H
+#define GEMINI_H
 #include "passwords.h"
 #include <Arduino.h>
 
 
 #define GEMINI_MODEL  "gemini-2.5-flash"
 
-void connectWiFiGemini(void);
+void Gemini_Init(void);
 String postGemini(const String &prompt);
 
-#endif /* API_HANDLER_H */
+#endif /* GEMINI_H */

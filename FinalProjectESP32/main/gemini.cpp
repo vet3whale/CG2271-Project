@@ -1,6 +1,6 @@
 #include <WiFi.h>
 #include <ESP32_AI_Connect.h>
-#include "api_handler.h"
+#include "gemini.h"
 #include "passwords.h"
 
 ESP32_AI_Connect aiClient("gemini", GEMINI_KEY, GEMINI_MODEL);
@@ -10,19 +10,11 @@ ESP32_AI_Connect aiClient("gemini", GEMINI_KEY, GEMINI_MODEL);
 static unsigned long sLastGeminiCall = 0;
 
 /* ── WiFi ────────────────────────────────────────────────────────────────── */
-void connectWiFiGemini(void) {
-    WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-    Serial.print("[WiFi] Connecting");
-    while (WiFi.status() != WL_CONNECTED) {
-        delay(250);
-        Serial.print(".");
-    }
-    Serial.print("\nConnected! IP: ");
-    Serial.println(WiFi.localIP());
-
+void Gemini_Init(void) {
     aiClient.setChatMaxTokens(300);
     aiClient.setChatTemperature(0.7);
     aiClient.setChatSystemRole("You are a study environment AI assistant.");
+    postGemini("is you awake?");
 }
 
 /* ── Gemini ──────────────────────────────────────────────────────────────── */

@@ -29,13 +29,6 @@ void UART_TX_SendCmd(uint8_t cmd)
     };
 
     int written = uart_write_bytes(MCXC_UART_PORT, (const char *)pkt, TX_PKT_LEN);
-    if (written == TX_PKT_LEN) {
-        Serial.print("[UART_TX] Sent cmd=0x");
-        Serial.print(cmd, HEX);
-        Serial.println(cmd == TX_CMD_LED_ON ? " (LED ON)" : " (LED OFF)");
-    } else {
-        Serial.println("[UART_TX] Warning: LED packet write incomplete");
-    }
 }
 
 /* ── Temperature packet (6 bytes) ───────────────────────────────────────── */

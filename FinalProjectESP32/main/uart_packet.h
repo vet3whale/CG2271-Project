@@ -17,15 +17,11 @@
  * [7]  sound_raw_L
  * [8]  sound_triggered
  * [9]  env_condition
- * [10] checksum XOR[2..9]
- * [11] END
+ * [10] temp
+ * [11] checksum XOR[2..9]
+ * [12] END
  */
 #define PACKET_LEN      13U
-
-/* ── ESP32 → MCXC LED command packet (5 bytes, unchanged) ───────────────
- * [0] START1  [1] START2 (0x55)  [2] cmd  [3] checksum  [4] END
- */
-/* (kept in uart_tx.h as TX_PKT_LEN / TX_CHECKSUM) */
 
 /* ── ESP32 → MCXC Temperature packet (6 bytes, NEW) ─────────────────────
  * [0] START1
