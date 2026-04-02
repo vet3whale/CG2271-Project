@@ -11,7 +11,7 @@
 /* ── Private: build 12-byte TX packet ───────────────────────────────────── */
 static void build_packet(uint8_t tap, uint8_t focus,
                          uint16_t light, uint16_t sound,
-                         uint8_t triggered, uint8_t env_cond,  /* ← ADDED */
+                         uint8_t triggered, uint8_t env_cond, uint8_t temp,  /* ← ADDED */
                          uint8_t *pkt)
 {
     uint8_t chk = 0;
@@ -25,9 +25,10 @@ static void build_packet(uint8_t tap, uint8_t focus,
     pkt[7]  = (uint8_t)(sound & 0xFF);
     pkt[8]  = triggered;
     pkt[9]  = env_cond;                        /* ← env_condition byte */
-    for (uint8_t i = 2; i <= 9; i++) chk ^= pkt[i];  /* ← XOR[2..9] */
-    pkt[10] = chk;
-    pkt[11] = PACKET_END;
+    pkt[10] = temp;
+    for (uint8_t i = 2; i <= 10; i++) chk ^= pkt[i];  /* ← XOR[2..9] */
+    pkt[11] = chk;
+    pkt[12] = PACKET_END;
 }
 
 /* ── Private: blocking UART2 send ───────────────────────────────────────── */
@@ -76,7 +77,7 @@ void vTxTask(void *pvParameters)
 {
     (void)pvParameters;
     uint8_t  packet[PACKET_LEN];
-    uint8_t  tap = 0, on_off = 0, triggered = 0, env_cond = ENV_UNKNOWN;
+    uint8_t  tap = 0, on_off = 0, triggered = 0, env_cond = ENV_UNKNOWN, temp = 0;
     uint16_t light = 0, sound = 0;
 
     while (1) {
@@ -89,12 +90,13 @@ void vTxTask(void *pvParameters)
             light     = gSensorData.light_raw;
             sound     = gSensorData.sound_raw;
             triggered = gSensorData.sound_triggered;
-            env_cond  = gSensorData.env_condition;  /* ← READ env_condition */
+            env_cond  = gSensorData.env_condition;
+            temp = gSensorData.temperature;
             if (tap) gSensorData.tap_event = 0;
             xSemaphoreGive(gSensorMutex);
         }
 
-        build_packet(tap, on_off, light, sound, triggered, env_cond, packet); /* ← PASS env_cond */
+        build_packet(tap, on_off, light, sound, triggered, env_cond, temp, packet); /* ← PASS env_cond */
         uart2_send_blocking(packet, PACKET_LEN);
     }
 }

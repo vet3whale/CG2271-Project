@@ -32,7 +32,7 @@ static const char* envConditionStr(uint8_t cond)
  */
 static bool validateChecksum(uint8_t *pkt) {
     uint8_t chk = 0;
-    for (uint8_t i = 2; i <= 9; i++) chk ^= pkt[i];
+    for (uint8_t i = 2; i <= 10; i++) chk ^= pkt[i];
     return chk == pkt[11];
 }
 

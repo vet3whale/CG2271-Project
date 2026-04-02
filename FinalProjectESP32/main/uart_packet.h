@@ -20,7 +20,7 @@
  * [10] checksum XOR[2..9]
  * [11] END
  */
-#define PACKET_LEN      12U
+#define PACKET_LEN      13U
 
 /* ── ESP32 → MCXC LED command packet (5 bytes, unchanged) ───────────────
  * [0] START1  [1] START2 (0x55)  [2] cmd  [3] checksum  [4] END
