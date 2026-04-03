@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <WiFi.h>
 
+
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
@@ -10,6 +11,8 @@
 #include "uart_tx.h"
 #include "gemini.h"
 #include "telegram_tx.h"
+#include "oled_display.h"
+
 
 SensorData_t      gSensorData  = {0};
 SemaphoreHandle_t gSensorMutex = NULL;
@@ -41,9 +44,12 @@ void setup() {
     DHT_Init();
     UART_RX_Init();
     UART_TX_Init();
+    OLED_Init();
+
 
     WiFi_Connect();
 
+    xTaskCreate(vOLEDTask, "OLED", OLED_TASK_STACK_SIZE, NULL, OLED_TASK_PRIORITY, NULL);
     xTaskCreate(vTelegramTask, "Telegram", 6144, NULL, 2, NULL); // Reduced from 8192
     xTaskCreate(vDHTTask,      "DHT",      2048, NULL, 2, NULL); 
     xTaskCreate(vUartRxTask,   "UartRX",   2048, NULL, 4, NULL); // Reduced from 4096
