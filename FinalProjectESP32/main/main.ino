@@ -16,7 +16,7 @@ SemaphoreHandle_t gSensorMutex = NULL;
 
 QueueHandle_t gTelegramQueue = NULL;
 SemaphoreHandle_t gGeminiMutex = NULL;
-volatile bool gGeminiTrigger = false;
+SemaphoreHandle_t gGeminiSemaphore = NULL;
 
 void WiFi_Connect(void) {
     if (WiFi.status() == WL_CONNECTED) {
@@ -38,16 +38,18 @@ void setup() {
     gSensorMutex = xSemaphoreCreateMutex();
     gGeminiMutex = xSemaphoreCreateMutex();
     gNetworkMutex = xSemaphoreCreateMutex();
+    gGeminiSemaphore = xSemaphoreCreateBinary();
+
     DHT_Init();
     UART_RX_Init();
     UART_TX_Init();
 
     WiFi_Connect();
 
-    xTaskCreate(vTelegramTask, "Telegram", 6144, NULL, 2, NULL); // Reduced from 8192
+    xTaskCreate(vTelegramTask, "Telegram", 6144, NULL, 3, NULL);
     xTaskCreate(vDHTTask,      "DHT",      2048, NULL, 2, NULL); 
-    xTaskCreate(vUartRxTask,   "UartRX",   2048, NULL, 4, NULL); // Reduced from 4096
-    xTaskCreate(vGeminiTask,   "Gemini",   6144, NULL, 2, NULL); // Reduced from 8192
+    xTaskCreate(vUartRxTask,   "UartRX",   2048, NULL, 4, NULL);
+    xTaskCreate(vGeminiTask,   "Gemini",   6144, NULL, 2, NULL);
 }
 
 void loop() {

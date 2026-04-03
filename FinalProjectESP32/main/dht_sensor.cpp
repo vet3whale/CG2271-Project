@@ -85,6 +85,6 @@ void vDHTTask(void *pvParameters)
         uint8_t tf = (uint8_t)((temperature - (float)ti) * 10.0f);
         UART_TX_SendTemp(ti, tf);
 
-        vTaskDelay(pdMS_TO_TICKS(DHT_POLL_MS));   /* 1000ms */
+        vTaskDelay(pdMS_TO_TICKS(DHT_POLL_MS));
     }
 }

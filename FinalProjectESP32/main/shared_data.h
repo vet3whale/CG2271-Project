@@ -20,7 +20,7 @@ typedef struct {
     uint16_t sound_raw;         // ADC 0-1023
     uint8_t  sound_triggered;   // 1 = sound event this cycle
     uint8_t  env_condition;
-    
+    uint32_t session_duration_sec;
 } SensorData_t;
 
 extern SensorData_t      gSensorData;
@@ -30,7 +30,7 @@ extern SemaphoreHandle_t gSensorMutex;
 
 extern QueueHandle_t gTelegramQueue;
 extern SemaphoreHandle_t gGeminiMutex;
-volatile extern bool gGeminiTrigger;
+extern SemaphoreHandle_t gGeminiSemaphore;
 
 extern SemaphoreHandle_t gNetworkMutex;
 

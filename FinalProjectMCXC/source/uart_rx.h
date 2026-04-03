@@ -22,7 +22,6 @@
 #define RX_PKT_LEN       5U
 #define RX_CMD_LED_ON    0x01U
 #define RX_CMD_LED_OFF   0x00U
-#define RX_CHECKSUM(cmd) ((uint8_t)((cmd) ^ 0xFFU))
 
 #define RX_TASK_STACK    128U
 

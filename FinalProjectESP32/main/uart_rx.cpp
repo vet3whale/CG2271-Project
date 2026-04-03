@@ -32,9 +32,15 @@ static const char* envConditionStr(uint8_t cond)
  */
 static bool validateChecksum(uint8_t *pkt) {
     uint8_t chk = 0;
-    for (uint8_t i = 2; i <= 10; i++) chk ^= pkt[i];
-    return chk == pkt[11];
+    for (uint8_t i = 2; i <= PACKET_LEN-3; i++) chk ^= pkt[i];
+    return chk == pkt[PACKET_LEN-2];
 }
+
+static uint8_t  sPrevOnOff = 0;
+static uint8_t  sPrevPaused = 0;
+static uint32_t s_session_start_ms = 0;
+static uint32_t s_total_focused_ms = 0;
+static bool s_is_timing = false;
 
 /*
  * parseAndStore()
@@ -65,13 +71,46 @@ static void parseAndStore(uint8_t *pkt) {
         Serial.print("  temp:     "); Serial.println(temp);
     }
 
-    static uint8_t sPrevOnOff = 0;
-
-    if (sPrevOnOff == 1 && on_off == 0) {
-        gGeminiTrigger = true;   // focus session just ended
-        Serial.println("[UART] Timer ended — Gemini trigger set");
+    // 1. Detect START: on_off 0 -> 1
+    if (sPrevOnOff == 0 && on_off == 1) {
+        s_total_focused_ms = 0; // Reset timer for new session
+        if (paused == 0) {
+            s_session_start_ms = millis();
+            s_is_timing = true;
+            Serial.println("[UART] Session started.");
+        }
     }
+    // 2. Detect PAUSE: paused 0 -> 1 (while session is active)
+    else if (on_off == 1 && sPrevPaused == 0 && paused == 1) {
+        if (s_is_timing) {
+            s_total_focused_ms += (millis() - s_session_start_ms);
+            s_is_timing = false;
+            Serial.println("[UART] Session paused.");
+        }
+    }
+    // 3. Detect RESUME: paused 1 -> 0 (while session is active)
+    else if (on_off == 1 && sPrevPaused == 1 && paused == 0) {
+        if (!s_is_timing) {
+            s_session_start_ms = millis();
+            s_is_timing = true;
+            Serial.println("[UART] Session resumed.");
+        }
+    }
+    // 4. Detect STOP: on_off 1 -> 0
+    else if (sPrevOnOff == 1 && on_off == 0) {
+        if (s_is_timing) {
+            s_total_focused_ms += (millis() - s_session_start_ms);
+            s_is_timing = false;
+        }
+        
+        if (gGeminiSemaphore != NULL) {
+            xSemaphoreGive(gGeminiSemaphore);
+            Serial.println("[UART] Session ended — Gemini semaphore given");
+        }
+    }
+
     sPrevOnOff = on_off;
+    sPrevPaused = paused;
 
     if (xSemaphoreTake(gSensorMutex, pdMS_TO_TICKS(10)) == pdTRUE) {
         gSensorData.tap_event       = tap;
@@ -81,6 +120,8 @@ static void parseAndStore(uint8_t *pkt) {
         gSensorData.sound_raw       = sound;
         gSensorData.sound_triggered = triggered;
         gSensorData.env_condition = env_cond;
+        gSensorData.session_duration_sec = s_total_focused_ms / 1000;
+        
         xSemaphoreGive(gSensorMutex);
     } else {
         Serial.println("[UART] Warning: could not take mutex — skipping write");

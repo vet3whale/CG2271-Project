@@ -41,7 +41,7 @@
 #define ENV_TOO_HOT     0x03U
 #define ENV_TOO_COLD    0x04U
 #define ENV_GOOD        0x05U
-#define ENV_MODRERATE   0x06U
+#define ENV_MODERATE    0x06U
 #define ENV_POOR        0x07U
 
 

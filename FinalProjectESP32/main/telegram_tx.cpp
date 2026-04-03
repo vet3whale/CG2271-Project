@@ -12,6 +12,9 @@
 static WiFiClientSecure client;
 static UniversalTelegramBot bot(BOT_TOKEN, client);
 
+#define TELEGRAM_COOLDOWN_MS 15000
+static unsigned long sLastTelegramSend = 0;
+
 void vTelegramTask(void *pvParameters) {
     char rxBuffer[GEMINI_RESPONSE_MAX_LEN];
 
@@ -19,16 +22,22 @@ void vTelegramTask(void *pvParameters) {
         // This will wait (block) indefinitely until a message is added to the queue
         if (xQueueReceive(gTelegramQueue, &rxBuffer, portMAX_DELAY) == pdPASS) {
             Serial.println("[Telegram] New message dequeued");
+            unsigned long now = millis();
 
             // Take network mutex to send
             if (xSemaphoreTake(gNetworkMutex, pdMS_TO_TICKS(10000)) == pdTRUE) {
                 client.setInsecure();
-                
+                if (sLastTelegramSend != 0 && (now - sLastTelegramSend) < TELEGRAM_COOLDOWN_MS) {
+                    Serial.println("[Telegram] BLOCKED: Cooldown active. Dropping duplicate message.");
+                    xSemaphoreGive(gNetworkMutex);
+                    continue;
+                }                
                 if (bot.sendMessage(CHAT_ID, String(rxBuffer), "")) {
                     Serial.println("[Telegram] Send success");
                 } else {
                     Serial.println("[Telegram] Send failed");
                 }
+                sLastTelegramSend = millis();
                 xSemaphoreGive(gNetworkMutex);
             }
             

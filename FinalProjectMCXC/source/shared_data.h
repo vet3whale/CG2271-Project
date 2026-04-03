@@ -23,6 +23,7 @@ extern SemaphoreHandle_t gTempReadySem;
 
 extern volatile SensorData_t gSensorData;
 extern volatile int led_state;
+extern volatile uint8_t g_color_blend; // 0 = Green, 100 = Red
 
 extern TaskHandle_t xTxTaskHandle; // used if u wanna immediately tx data
 

@@ -68,21 +68,30 @@ void vGeminiTask(void *pvParameters) {
     (void)pvParameters;
 
     while (1) {
-        if (gGeminiTrigger) {
-            gGeminiTrigger = false;
-            // Build a prompt with current sensor context
+        if (xSemaphoreTake(gGeminiSemaphore, portMAX_DELAY) == pdTRUE) {
+            
+            float t = 0.0;
+            float h = 0.0;
+            uint32_t duration_sec = 0;
             if (xSemaphoreTake(gSensorMutex, pdMS_TO_TICKS(100)) == pdTRUE) {
-                float t = gSensorData.esp_temp;
-                float h = gSensorData.esp_humidity;
+                t = gSensorData.esp_temp;
+                h = gSensorData.esp_humidity;
+                duration_sec = gSensorData.session_duration_sec;
                 xSemaphoreGive(gSensorMutex);
-
-                String prompt = "The focus session just ended. Temp was " + String(t, 1)
-                              + "C, humidity " + String(h, 1)
-                              + "%. Give a short study session recap and tip. Keep your response to 500 characters only."  +
-                              "you dont need to care what the person studied. include an emoji and no * in the text.";
-                postGemini(prompt);
             }
+
+            uint32_t mins = duration_sec / 60;
+            uint32_t secs = duration_sec % 60;
+            String timeStr = String(mins) + " minutes and " + String(secs) + " seconds";
+
+            // Build the prompt with the newly calculated time
+            String prompt = "The focus session just ended. The user studied for " + timeStr + 
+                            ". Temp was " + String(t, 1) + "C, humidity " + String(h, 1) + 
+                            "%. Give a short study session recap praising them for their time " +
+                            "and one tip based on the environment. Keep response to 400 characters. " +
+                            "Include an emoji and no * in the text.";
+            
+            postGemini(prompt);
         }
-        vTaskDelay(pdMS_TO_TICKS(500));   // poll every 500ms
     }
 }

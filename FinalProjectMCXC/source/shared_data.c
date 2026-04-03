@@ -12,6 +12,7 @@ SemaphoreHandle_t gTempReadySem = NULL;
 
 volatile SensorData_t gSensorData = { 0, 0, 0, 0, 0, 0, 0, 0, ENV_UNKNOWN };
 volatile int led_state = 0;
+volatile uint8_t g_color_blend = 0;
 
 TaskHandle_t xTxTaskHandle = NULL;
 
