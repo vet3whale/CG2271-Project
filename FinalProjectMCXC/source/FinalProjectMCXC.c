@@ -13,6 +13,7 @@
 #include "sound_sensor.h"
 #include "uart_tx.h"
 #include "uart_rx.h"
+#include "env_condition.h"
 
 int main(void) {
     BOARD_InitBootPins();
@@ -22,6 +23,8 @@ int main(void) {
 
     gSensorMutex = xSemaphoreCreateMutex();
     gADCMutex = xSemaphoreCreateMutex();
+    gTempReadySem = xSemaphoreCreateBinary();
+
     TAP_Init();
     led_init();
     initUART2_RXTX(MCXC_UART_BAUD);
@@ -31,9 +34,12 @@ int main(void) {
     xTaskCreate(vSoundTask, "Sound", configMINIMAL_STACK_SIZE, NULL, 2, NULL);
 
     xTaskCreate(vLEDTask, "LED", configMINIMAL_STACK_SIZE, NULL, 2, NULL);
-    // xTaskCreate(vPrintTask, "Print", 256, NULL, 3, NULL);
     xTaskCreate(vTxTask, "TXTask", configMINIMAL_STACK_SIZE+128, NULL, 2, NULL);
     xTaskCreate(vRXTask, "RXTask", configMINIMAL_STACK_SIZE, NULL, 2, NULL);
+
+    xTaskCreate(vEnvTask, "EnvTask",configMINIMAL_STACK_SIZE+128, NULL, 3, NULL);
+
+    // xTaskCreate(vPrintTask, "Print", 256, NULL, 3, NULL);
 
     vTaskStartScheduler();
     while(1);

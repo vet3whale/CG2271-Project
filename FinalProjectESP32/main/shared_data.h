@@ -3,6 +3,7 @@
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
+#include "freertos/queue.h"
 #include <stdint.h>
 
 typedef struct {
@@ -13,14 +14,23 @@ typedef struct {
 
     /* UART — written by vUartRxTask (from MCXC444) */
     uint8_t  tap_event;         // 1 = tap detected
-    uint8_t  focus_mode;        // 1 = focus mode active
+    uint8_t  on_off;        // 1 = focus mode active
     uint16_t light_raw;         // ADC 0-1023
     uint16_t sound_raw;         // ADC 0-1023
     uint8_t  sound_triggered;   // 1 = sound event this cycle
-
+    uint8_t  env_condition;
+    
 } SensorData_t;
 
 extern SensorData_t      gSensorData;
 extern SemaphoreHandle_t gSensorMutex;
+
+#define GEMINI_RESPONSE_MAX_LEN 512
+
+extern QueueHandle_t gTelegramQueue;
+extern SemaphoreHandle_t gGeminiMutex;
+volatile extern bool gGeminiTrigger;
+
+extern SemaphoreHandle_t gNetworkMutex;
 
 #endif // SHARED_DATA_H

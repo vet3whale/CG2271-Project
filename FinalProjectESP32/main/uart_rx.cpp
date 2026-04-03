@@ -11,6 +11,20 @@
 
 /* ── Private helpers ─────────────────────────────────────────────────────── */
 
+static const char* envConditionStr(uint8_t cond)
+{
+    switch (cond) {
+        case ENV_GOOD:     return "GOOD";
+        case ENV_TOO_DARK: return "TOO DARK";
+        case ENV_TOO_LOUD: return "TOO LOUD";
+        case ENV_TOO_HOT:  return "TOO HOT";
+        case ENV_TOO_COLD: return "TOO COLD";
+        case ENV_MODERATE: return "MODERATE";
+        case ENV_POOR:     return "POOR";
+        default:           return "UNKNOWN";
+    }
+}
+
 /*
  * validateChecksum()
  * XOR of bytes [2..8] must equal byte [9]
@@ -18,10 +32,8 @@
  */
 static bool validateChecksum(uint8_t *pkt) {
     uint8_t chk = 0;
-    for (uint8_t i = 2; i <= 8; i++) {
-        chk ^= pkt[i];
-    }
-    return chk == pkt[9];
+    for (uint8_t i = 2; i <= 10; i++) chk ^= pkt[i];
+    return chk == pkt[11];
 }
 
 /*
@@ -32,42 +44,46 @@ static bool validateChecksum(uint8_t *pkt) {
  */
 static void parseAndStore(uint8_t *pkt) {
     uint8_t  tap       = pkt[2];
-    uint8_t  focus     = pkt[3];
+    uint8_t  on_off     = pkt[3];
     uint16_t light     = ((uint16_t)pkt[4] << 8) | pkt[5];
     uint16_t sound     = ((uint16_t)pkt[6] << 8) | pkt[7];
     uint8_t  triggered = pkt[8];
+    uint8_t env_cond  = pkt[9];
+    uint8_t temp = pkt[10];
 
-    /*
-     * Send LED command back to MCXC444 on every valid packet.
-     * focus_mode == 1 → LED ON (0x01)
-     * focus_mode == 0 → LED OFF (0x00)
-     * MCXC444 vRXTask will pick this up and update gSensorData.on_off.
-     */
-    UART_TX_SendCmd(focus == 1 ? TX_CMD_LED_ON : TX_CMD_LED_OFF);
+    UART_TX_SendCmd(on_off == 1 ? TX_CMD_LED_ON : TX_CMD_LED_OFF);
+    if (on_off) {
+        Serial.println("[UART] Valid packet received:");
+        Serial.print("  tap_event:       "); Serial.println(tap);
+        Serial.print("  on_off_mode:     "); Serial.println(on_off);
+        Serial.print("  light_raw:       "); Serial.println(light);
+        Serial.print("  sound_raw:       "); Serial.println(sound);
+        Serial.print("  sound_triggered: "); Serial.println(triggered);
+        Serial.print("  env_cond: "); Serial.println(envConditionStr(env_cond));
+        Serial.print("  temp:     "); Serial.println(temp);
+    }
 
-    Serial.println("[UART] Valid packet received:");
-    Serial.print("  tap_event:       "); Serial.println(tap);
-    Serial.print("  focus_mode:      "); Serial.println(focus);
-    Serial.print("  light_raw:       "); Serial.println(light);
-    Serial.print("  sound_raw:       "); Serial.println(sound);
-    Serial.print("  sound_triggered: "); Serial.println(triggered);
+    static uint8_t sPrevOnOff = 0;
+
+    if (sPrevOnOff == 1 && on_off == 0) {
+        gGeminiTrigger = true;   // focus session just ended
+        Serial.println("[UART] Timer ended — Gemini trigger set");
+    }
+    sPrevOnOff = on_off;
 
     if (xSemaphoreTake(gSensorMutex, pdMS_TO_TICKS(10)) == pdTRUE) {
         gSensorData.tap_event       = tap;
-        gSensorData.focus_mode      = focus;
+        gSensorData.on_off      = on_off;
         gSensorData.light_raw       = light;
         gSensorData.sound_raw       = sound;
         gSensorData.sound_triggered = triggered;
+        gSensorData.env_condition = env_cond;
         xSemaphoreGive(gSensorMutex);
     } else {
         Serial.println("[UART] Warning: could not take mutex — skipping write");
     }
 
 }
-
-/* ═════════════════════════════════════════════════════════════════════════ */
-/*  PUBLIC FUNCTIONS                                                         */
-/* ═════════════════════════════════════════════════════════════════════════ */
 
 void UART_RX_Init(void) {
     /* LED setup */
@@ -102,18 +118,7 @@ void UART_RX_Init(void) {
                  UART_PIN_NO_CHANGE);  // CTS — not used
 
     Serial.println("[UART] Receiver initialised — RX only mode");
-    Serial.print("[UART] Listening on GPIO");
-    Serial.print(MCXC_UART_RXD_PIN);
-    Serial.print(" at ");
-    Serial.print(MCXC_UART_BAUD);
-    Serial.println(" baud");
-    Serial.print("[UART] LED indicator on GPIO");
-    Serial.println(MCXC_LED_PIN);
 }
-
-/* ═════════════════════════════════════════════════════════════════════════ */
-/*  TASK                                                                     */
-/* ═════════════════════════════════════════════════════════════════════════ */
 
 void vUartRxTask(void *pvParameters) {
     (void)pvParameters;
@@ -126,10 +131,6 @@ void vUartRxTask(void *pvParameters) {
     Serial.println("[UART] Receive task started — waiting for packets...");
 
     while (1) {
-        /*
-         * Block up to 10ms waiting for a byte.
-         * Returns number of bytes read — 0 means timeout, try again.
-         */
         int received = uart_read_bytes(MCXC_UART_PORT,
                                        &byte, 1,
                                        pdMS_TO_TICKS(10));
@@ -153,10 +154,8 @@ void vUartRxTask(void *pvParameters) {
             continue;
         }
 
-        /* ── Collect remaining bytes ────────────────────────────────────── */
         buf[idx++] = byte;
 
-        /* ── Full packet ────────────────────────────────────────────────── */
         if (idx == PACKET_LEN) {
             idx    = 0;
             synced = false;
@@ -176,5 +175,6 @@ void vUartRxTask(void *pvParameters) {
             /* Valid — parse and store */
             parseAndStore(buf);
         }
+        vTaskDelay(pdMS_TO_TICKS(10));
     }
 }

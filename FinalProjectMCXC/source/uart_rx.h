@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include "FreeRTOS.h"
 #include "task.h"
-#include "uart_packet.h"    /* reuses PACKET_START1, PACKET_START2, PACKET_END */
+#include "uart_packet.h" // reuses PACKET_START1, PACKET_START2, PACKET_END
 
 /*
  * RX command packet sent FROM ESP32 TO MCXC444 (5 bytes):

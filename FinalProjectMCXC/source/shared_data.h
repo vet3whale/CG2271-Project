@@ -12,10 +12,15 @@ typedef struct {
     uint16_t light_raw;
     uint16_t sound_raw;
     uint8_t  sound_triggered;
+    int8_t   temperature;
+    uint8_t  temp_frac;
+    uint8_t  env_condition;
 } SensorData_t;
 
 extern SemaphoreHandle_t gSensorMutex;
 extern SemaphoreHandle_t gADCMutex;
+extern SemaphoreHandle_t gTempReadySem;
+
 extern volatile SensorData_t gSensorData;
 extern volatile int led_state;
 

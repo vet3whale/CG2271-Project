@@ -11,9 +11,7 @@
 #include "sound_sensor.h"
 #include "shared_data.h"
 
-/* -----------------------------------------------------------------------
- * Internal: ADC Self-Calibration
- * ----------------------------------------------------------------------- */
+ // Internal: ADC Self-Calibration
 static void adc_calibrate(void){
 	NVIC_DisableIRQ(ADC0_IRQn);
 	uint16_t cal_var;
@@ -73,9 +71,6 @@ static void adc_calibrate(void){
     NVIC_EnableIRQ(ADC0_IRQn);
 }
 
-/* -----------------------------------------------------------------------
- * Public: sound_sensor_init  (RM 23.6.1.1)
- * ----------------------------------------------------------------------- */
 void sound_sensor_init(void){
     SIM->SCGC5 |= SIM_SCGC5_PORTB_MASK;
     SIM->SCGC6 |= SIM_SCGC6_ADC0_MASK;
@@ -106,10 +101,6 @@ void sound_sensor_init(void){
     ADC0->SC1[0] |=  ADC_SC1_ADCH(0x1FU);
 }
 
-/* -----------------------------------------------------------------------
- * Public: sound_sensor_read  (RM 23.5.4.1)
- * MUST be called while holding gADCMutex
- * ----------------------------------------------------------------------- */
 uint16_t sound_sensor_read(void){
     /* Single atomic write — no interrupt for polling */
     ADC0->SC1[0] = ADC_SC1_ADCH(SOUND_ADC_CHANNEL);
@@ -119,12 +110,6 @@ uint16_t sound_sensor_read(void){
     return (uint16_t)(ADC0->R[0] & 0xFFFFU);
 }
 
-
-/* -----------------------------------------------------------------------
- * Public: vSoundTask
- * Phase 1 — 5s calibration (holds gADCMutex for full window)
- * Phase 2 — continuous peak-hold monitoring
- * ----------------------------------------------------------------------- */
 /* -----------------------------------------------------------------------
  * Public: vSoundTask
  * Phase 1 — 5s calibration (holds gADCMutex for full window)
@@ -180,7 +165,7 @@ void vSoundTask(void *pvParameters){
                            : (baseline - sample);
             if (dev > TRIGGER_DELTA) aboveCount++;
 
-            // vTaskDelay(pdMS_TO_TICKS(PEAK_SAMPLE_DELAY));
+            vTaskDelay(pdMS_TO_TICKS(PEAK_SAMPLE_DELAY));
         }
 
         /* Peak-to-peak swing — catches both the compression and rarefaction

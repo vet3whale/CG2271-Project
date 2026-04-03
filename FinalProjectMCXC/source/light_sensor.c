@@ -28,10 +28,10 @@ void initLightADC(void)
     /* Disable ADC module before configuration */
     ADC0->SC1[0] = ADC_SC1_ADCH(0x1FU);
 
-    ADC0->CFG1 = ADC_CFG1_MODE(0b11);         // 16-bit
-    ADC0->CFG2 &= ~ADC_CFG2_MUXSEL_MASK;      // SE9 has no b-side
-    ADC0->SC2  = ADC_SC2_REFSEL(0b01);        // VDDA ref, software trigger
-    ADC0->SC3  = 0U;                            // no averaging, no continuous
+    ADC0->CFG1 = ADC_CFG1_MODE(0b11); // 16-bit
+    ADC0->CFG2 &= ~ADC_CFG2_MUXSEL_MASK; // SE9 has no b-side
+    ADC0->SC2  = ADC_SC2_REFSEL(0b01); // VDDA ref, software trigger
+    ADC0->SC3  = 0U; // no averaging, no continuous
 
     NVIC_SetPriority(ADC0_IRQn, 1);
     NVIC_EnableIRQ(ADC0_IRQn);

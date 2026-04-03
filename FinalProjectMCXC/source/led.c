@@ -35,9 +35,8 @@ void led_init(void)
     LED_TPM->MOD = LED_MOD;
     LED_TPM->SC  = TPM_SC_PS(TPM1_PS);
 
-    LED_TPM->CONTROLS[LED_TPM_CHANNEL].CnSC =
-        TPM_CnSC_MSB_MASK | TPM_CnSC_ELSB_MASK;   // high-true EPWM
-    LED_TPM->CONTROLS[LED_TPM_CHANNEL].CnV  = 0U;   /* off at start */
+    LED_TPM->CONTROLS[LED_TPM_CHANNEL].CnSC = TPM_CnSC_MSB_MASK | TPM_CnSC_ELSB_MASK; // high-true EPWM
+    LED_TPM->CONTROLS[LED_TPM_CHANNEL].CnV = 0U; //off at start
 }
 
 void vLEDTask(void *pvParameters)

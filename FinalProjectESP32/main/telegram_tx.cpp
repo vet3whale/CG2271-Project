@@ -12,41 +12,28 @@
 static WiFiClientSecure client;
 static UniversalTelegramBot bot(BOT_TOKEN, client);
 
-static void connectWiFiTele() {
-    WiFi.mode(WIFI_STA);
-    WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-    int attempts = 0;
-    while (WiFi.status() != WL_CONNECTED && attempts < 40) {
-        delay(500);
-        Serial.println("connecting");
-        attempts++;
-    }
-
-    if (WiFi.status() == WL_CONNECTED) {
-        client.setInsecure();
-        Serial.println("connected");
-        bot.sendMessage(CHAT_ID, "ESP32 online!", "");
-    }
-}
-
-
-void Telegram_Init() {
-    connectWiFiTele();
-    bot.sendMessage(CHAT_ID, "ESP32 online!", "");
-}
-
 void vTelegramTask(void *pvParameters) {
-    (void)pvParameters;
+    char rxBuffer[GEMINI_RESPONSE_MAX_LEN];
 
     while (1) {
-        vTaskDelay(pdMS_TO_TICKS(30000)); // send every 30s
-        if (xSemaphoreTake(gSensorMutex, pdMS_TO_TICKS(100)) == pdTRUE) {
-            float t = gSensorData.esp_temp;
-            float h = gSensorData.esp_humidity;
-            xSemaphoreGive(gSensorMutex);
-            String msg = "🌡 Temp: " + String(t, 1) + " C\n";
-            msg += "💧 Humidity: " + String(h, 1) + " %";
-            bot.sendMessage(CHAT_ID, msg, "");
+        // This will wait (block) indefinitely until a message is added to the queue
+        if (xQueueReceive(gTelegramQueue, &rxBuffer, portMAX_DELAY) == pdPASS) {
+            Serial.println("[Telegram] New message dequeued");
+
+            // Take network mutex to send
+            if (xSemaphoreTake(gNetworkMutex, pdMS_TO_TICKS(10000)) == pdTRUE) {
+                client.setInsecure();
+                
+                if (bot.sendMessage(CHAT_ID, String(rxBuffer), "")) {
+                    Serial.println("[Telegram] Send success");
+                } else {
+                    Serial.println("[Telegram] Send failed");
+                }
+                xSemaphoreGive(gNetworkMutex);
+            }
+            
+            // Short rest to let the WiFi hardware stabilize
+            vTaskDelay(pdMS_TO_TICKS(500));
         }
     }
 }
