@@ -45,10 +45,10 @@ void UART_TX_SendTemp(int8_t temp_int, uint8_t temp_frac)
 
     int written = uart_write_bytes(MCXC_UART_PORT, (const char *)pkt, TEMP_PKT_LEN);
     if (written == TEMP_PKT_LEN) {
-        Serial.print("[UART_TX] Sent temp: ");
-        Serial.print(temp_int);
-        Serial.print(".");
-        Serial.println(temp_frac);
+        // Serial.print("[UART_TX] Sent temp: ");
+        // Serial.print(temp_int);
+        // Serial.print(".");
+        // Serial.println(temp_frac);
     } else {
         Serial.println("[UART_TX] Warning: temp packet write incomplete");
     }

@@ -12,67 +12,28 @@
 static WiFiClientSecure client;
 static UniversalTelegramBot bot(BOT_TOKEN, client);
 
-static void connectWiFiTele() {
-    WiFi.mode(WIFI_STA);
-    WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-    int attempts = 0;
-    while (WiFi.status() != WL_CONNECTED && attempts < 40) {
-        delay(500);
-        Serial.println("connecting");
-        attempts++;
-    }
-
-    if (WiFi.status() == WL_CONNECTED) {
-        client.setInsecure();
-        Serial.println("connected");
-        bot.sendMessage(CHAT_ID, "ESP32 online!", "");
-    }
-}
-
-
-void Telegram_Init() {
-    if (WiFi.status() == WL_CONNECTED) {
-        client.setInsecure();
-        Serial.println("connected");
-
-        if (xSemaphoreTake(gNetworkMutex, pdMS_TO_TICKS(5000)) == pdTRUE) {
-            int send = bot.sendMessage(CHAT_ID, "ESP32 online!", "");
-            xSemaphoreGive(gNetworkMutex);
-            Serial.print("[Telegram] Init send status: ");
-            Serial.println(send);
-        }
-    }
-}
-
 void vTelegramTask(void *pvParameters) {
-    (void)pvParameters;
+    char rxBuffer[GEMINI_RESPONSE_MAX_LEN];
 
     while (1) {
-        char geminiMsg[GEMINI_RESPONSE_MAX_LEN] = {0};
-        Serial.println("[Telegram] Task running");
+        // This will wait (block) indefinitely until a message is added to the queue
+        if (xQueueReceive(gTelegramQueue, &rxBuffer, portMAX_DELAY) == pdPASS) {
+            Serial.println("[Telegram] New message dequeued");
 
-        if (xSemaphoreTake(gGeminiMutex, pdMS_TO_TICKS(500)) == pdTRUE) {
-            client.stop(); // Ensure previous session is dead
-            client.setInsecure();
-            if (gGeminiResponse[0] != '\0') {
-                strncpy(geminiMsg, gGeminiResponse, GEMINI_RESPONSE_MAX_LEN - 1);
-                geminiMsg[GEMINI_RESPONSE_MAX_LEN - 1] = '\0';
-                gGeminiResponse[0] = '\0';
-            }
-            xSemaphoreGive(gGeminiMutex);
-        }
-
-        if (geminiMsg[0] != '\0') {
-            if (xSemaphoreTake(gNetworkMutex, pdMS_TO_TICKS(5000)) == pdTRUE) {
-                Telegram_Init();
-                int send = bot.sendMessage(CHAT_ID, String(geminiMsg), "");
+            // Take network mutex to send
+            if (xSemaphoreTake(gNetworkMutex, pdMS_TO_TICKS(10000)) == pdTRUE) {
+                client.setInsecure();
                 
+                if (bot.sendMessage(CHAT_ID, String(rxBuffer), "")) {
+                    Serial.println("[Telegram] Send success");
+                } else {
+                    Serial.println("[Telegram] Send failed");
+                }
                 xSemaphoreGive(gNetworkMutex);
-                Serial.print("Send status: "); Serial.println(send);
             }
+            
+            // Short rest to let the WiFi hardware stabilize
+            vTaskDelay(pdMS_TO_TICKS(500));
         }
-        vTaskDelay(pdMS_TO_TICKS(1000));
-
-        vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }

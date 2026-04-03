@@ -3,6 +3,7 @@
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
+#include "freertos/queue.h"
 #include <stdint.h>
 
 typedef struct {
@@ -24,9 +25,9 @@ typedef struct {
 extern SensorData_t      gSensorData;
 extern SemaphoreHandle_t gSensorMutex;
 
-#define GEMINI_RESPONSE_MAX_LEN 128
+#define GEMINI_RESPONSE_MAX_LEN 512
 
-extern char gGeminiResponse[GEMINI_RESPONSE_MAX_LEN];
+extern QueueHandle_t gTelegramQueue;
 extern SemaphoreHandle_t gGeminiMutex;
 volatile extern bool gGeminiTrigger;
 

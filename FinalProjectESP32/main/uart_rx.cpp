@@ -131,10 +131,6 @@ void vUartRxTask(void *pvParameters) {
     Serial.println("[UART] Receive task started — waiting for packets...");
 
     while (1) {
-        /*
-         * Block up to 10ms waiting for a byte.
-         * Returns number of bytes read — 0 means timeout, try again.
-         */
         int received = uart_read_bytes(MCXC_UART_PORT,
                                        &byte, 1,
                                        pdMS_TO_TICKS(10));
@@ -158,10 +154,8 @@ void vUartRxTask(void *pvParameters) {
             continue;
         }
 
-        /* ── Collect remaining bytes ────────────────────────────────────── */
         buf[idx++] = byte;
 
-        /* ── Full packet ────────────────────────────────────────────────── */
         if (idx == PACKET_LEN) {
             idx    = 0;
             synced = false;

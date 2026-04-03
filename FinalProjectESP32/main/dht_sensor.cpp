@@ -64,7 +64,7 @@ void vDHTTask(void *pvParameters)
             continue;
         }
 
-        printReading(temperature, humidity);
+        // printReading(temperature, humidity);
 
         /* Update change tracking */
         sPrevTemp     = sLastTemp;

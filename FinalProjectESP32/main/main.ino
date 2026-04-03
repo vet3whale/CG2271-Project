@@ -14,7 +14,7 @@
 SensorData_t      gSensorData  = {0};
 SemaphoreHandle_t gSensorMutex = NULL;
 
-char gGeminiResponse[GEMINI_RESPONSE_MAX_LEN] = {0};
+QueueHandle_t gTelegramQueue = NULL;
 SemaphoreHandle_t gGeminiMutex = NULL;
 volatile bool gGeminiTrigger = false;
 
@@ -34,6 +34,7 @@ SemaphoreHandle_t gNetworkMutex = NULL;
 
 void setup() {
     Serial.begin(115200);
+    gTelegramQueue = xQueueCreate(5, GEMINI_RESPONSE_MAX_LEN);
     gSensorMutex = xSemaphoreCreateMutex();
     gGeminiMutex = xSemaphoreCreateMutex();
     gNetworkMutex = xSemaphoreCreateMutex();
@@ -42,10 +43,8 @@ void setup() {
     UART_TX_Init();
 
     WiFi_Connect();
-    // Telegram_Init();
-    // Gemini_Init();
 
-    xTaskCreate(vTelegramTask, "Telegram", 4096, NULL, 2, NULL); // Reduced from 8192
+    xTaskCreate(vTelegramTask, "Telegram", 6144, NULL, 2, NULL); // Reduced from 8192
     xTaskCreate(vDHTTask,      "DHT",      2048, NULL, 2, NULL); 
     xTaskCreate(vUartRxTask,   "UartRX",   2048, NULL, 4, NULL); // Reduced from 4096
     xTaskCreate(vGeminiTask,   "Gemini",   6144, NULL, 2, NULL); // Reduced from 8192
