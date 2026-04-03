@@ -13,7 +13,12 @@ typedef struct {
 
     /* UART — written by vUartRxTask (from MCXC444) */
     uint8_t  tap_event;         // 1 = tap detected
+<<<<<<< Updated upstream
     uint8_t  focus_mode;        // 1 = focus mode active
+=======
+    uint8_t  on_off;        
+    uint8_t  paused;
+>>>>>>> Stashed changes
     uint16_t light_raw;         // ADC 0-1023
     uint16_t sound_raw;         // ADC 0-1023
     uint8_t  sound_triggered;   // 1 = sound event this cycle
