@@ -10,18 +10,19 @@
  * [0]  START1
  * [1]  START2 (0x55)
  * [2]  tap_event
- * [3]  focus_mode
- * [4]  light_raw_H
- * [5]  light_raw_L
- * [6]  sound_raw_H
- * [7]  sound_raw_L
- * [8]  sound_triggered
- * [9]  env_condition
- * [10] temp
- * [11] checksum XOR[2..9]
- * [12] END
+ * [3]  on_off
+ * [4]  paused
+ * [5]  light_raw_H
+ * [6]  light_raw_L
+ * [7]  sound_raw_H
+ * [8]  sound_raw_L
+ * [9]  sound_triggered
+ * [10]  env_condition
+ * [11] temp
+ * [12] checksum XOR[2..9]
+ * [13] END
  */
-#define PACKET_LEN      13U
+#define PACKET_LEN      14U 
 
 /* ── ESP32 → MCXC Temperature packet (6 bytes, NEW) ─────────────────────
  * [0] START1
