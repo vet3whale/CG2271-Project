@@ -42,13 +42,13 @@ void setup() {
     UART_TX_Init();
 
     WiFi_Connect();
-    Telegram_Init();
-    Gemini_Init();
+    // Telegram_Init();
+    // Gemini_Init();
 
-    xTaskCreate(vTelegramTask, "Telegram", TELEGRAM_TASK_STACK_SIZE, NULL, 2, NULL);
-    xTaskCreate(vDHTTask, "DHT", DHT_TASK_STACK_SIZE, NULL, 2, NULL);
-    xTaskCreate(vUartRxTask, "UartRX", 4096, NULL, 4, NULL);
-    xTaskCreate(vGeminiTask, "Gemini", 8192, NULL, 2, NULL);
+    xTaskCreate(vTelegramTask, "Telegram", 4096, NULL, 2, NULL); // Reduced from 8192
+    xTaskCreate(vDHTTask,      "DHT",      2048, NULL, 2, NULL); 
+    xTaskCreate(vUartRxTask,   "UartRX",   2048, NULL, 4, NULL); // Reduced from 4096
+    xTaskCreate(vGeminiTask,   "Gemini",   6144, NULL, 2, NULL); // Reduced from 8192
 }
 
 void loop() {

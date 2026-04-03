@@ -4,14 +4,13 @@
 #include "passwords.h"
 #include "shared_data.h"
 
-ESP32_AI_Connect aiClient("gemini", GEMINI_KEY, GEMINI_MODEL);
-
 /* ── Cooldown ────────────────────────────────────────────────────────────── */
 #define GEMINI_COOLDOWN_MS   60000   // 60 seconds minimum between API calls
 static unsigned long sLastGeminiCall = 0;
 
 /* ── WiFi ────────────────────────────────────────────────────────────────── */
 void Gemini_Init(void) {
+    ESP32_AI_Connect aiClient("gemini", GEMINI_KEY, GEMINI_MODEL);
     aiClient.setChatMaxTokens(300);
     aiClient.setChatTemperature(0.7);
     aiClient.setChatSystemRole("You are a study environment AI assistant.");
@@ -20,7 +19,10 @@ void Gemini_Init(void) {
 /* ── Gemini ──────────────────────────────────────────────────────────────── */
 String postGemini(const String &prompt) {
     unsigned long now = millis();
-
+    ESP32_AI_Connect aiClient("gemini", GEMINI_KEY, GEMINI_MODEL);
+    aiClient.setChatMaxTokens(300);
+    aiClient.setChatTemperature(0.7);
+    aiClient.setChatSystemRole("You are a study environment AI assistant.");
     if (sLastGeminiCall != 0 && (now - sLastGeminiCall) < GEMINI_COOLDOWN_MS) {
         unsigned long remaining = (GEMINI_COOLDOWN_MS - (now - sLastGeminiCall)) / 1000;
         Serial.print("[Gemini] Cooldown active");
@@ -80,10 +82,9 @@ void vGeminiTask(void *pvParameters) {
                 float h = gSensorData.esp_humidity;
                 xSemaphoreGive(gSensorMutex);
 
-                // String prompt = "The focus session just ended. Temp was " + String(t, 1)
-                //               + "C, humidity " + String(h, 1)
-                //               + "%. Give a short study session recap and tip.";
-                String prompt = "is you awake?";
+                String prompt = "The focus session just ended. Temp was " + String(t, 1)
+                              + "C, humidity " + String(h, 1)
+                              + "%. Give a short study session recap and tip.";
                 postGemini(prompt);
             }
         }

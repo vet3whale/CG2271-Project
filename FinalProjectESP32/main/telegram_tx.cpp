@@ -53,7 +53,6 @@ void vTelegramTask(void *pvParameters) {
 
         if (xSemaphoreTake(gGeminiMutex, pdMS_TO_TICKS(500)) == pdTRUE) {
             client.stop(); // Ensure previous session is dead
-            client.setBufferSizes(512, 512); // Force smaller SSL buffers to save heap
             client.setInsecure();
             if (gGeminiResponse[0] != '\0') {
                 strncpy(geminiMsg, gGeminiResponse, GEMINI_RESPONSE_MAX_LEN - 1);
@@ -65,18 +64,14 @@ void vTelegramTask(void *pvParameters) {
 
         if (geminiMsg[0] != '\0') {
             if (xSemaphoreTake(gNetworkMutex, pdMS_TO_TICKS(5000)) == pdTRUE) {
-                client.setInsecure();
+                Telegram_Init();
                 int send = bot.sendMessage(CHAT_ID, String(geminiMsg), "");
+                
                 xSemaphoreGive(gNetworkMutex);
-                Serial.print("Send status: ");
-                Serial.println(send);
-                Serial.print("Free Heap: ");
-                Serial.println(ESP.getFreeHeap());
-
-            } else {
-                Serial.println("[Telegram] Failed to acquire network mutex");
+                Serial.print("Send status: "); Serial.println(send);
             }
         }
+        vTaskDelay(pdMS_TO_TICKS(1000));
 
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
