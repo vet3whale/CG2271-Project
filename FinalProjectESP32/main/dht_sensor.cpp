@@ -76,7 +76,7 @@ void vDHTTask(void *pvParameters)
         if (xSemaphoreTake(gSensorMutex, pdMS_TO_TICKS(10)) == pdTRUE) {
             gSensorData.esp_temp     = temperature;
             gSensorData.esp_humidity = humidity;
-            /* led_status removed — env_condition now comes back from MCXC TX packet */
+
             xSemaphoreGive(gSensorMutex);
         }
 

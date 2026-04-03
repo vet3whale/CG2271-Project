@@ -31,11 +31,16 @@ static void connectWiFiTele() {
 
 
 void Telegram_Init() {
-    // connectWiFiTele();
     if (WiFi.status() == WL_CONNECTED) {
         client.setInsecure();
         Serial.println("connected");
-        bot.sendMessage(CHAT_ID, "ESP32 online!", "");
+
+        if (xSemaphoreTake(gNetworkMutex, pdMS_TO_TICKS(5000)) == pdTRUE) {
+            int send = bot.sendMessage(CHAT_ID, "ESP32 online!", "");
+            xSemaphoreGive(gNetworkMutex);
+            Serial.print("[Telegram] Init send status: ");
+            Serial.println(send);
+        }
     }
 }
 
@@ -43,14 +48,36 @@ void vTelegramTask(void *pvParameters) {
     (void)pvParameters;
 
     while (1) {
-        vTaskDelay(pdMS_TO_TICKS(30000)); // send every 30s
-        if (xSemaphoreTake(gSensorMutex, pdMS_TO_TICKS(100)) == pdTRUE) {
-            float t = gSensorData.esp_temp;
-            float h = gSensorData.esp_humidity;
-            xSemaphoreGive(gSensorMutex);
-            String msg = "🌡 Temp: " + String(t, 1) + " C\n";
-            msg += "💧 Humidity: " + String(h, 1) + " %";
-            bot.sendMessage(CHAT_ID, msg, "");
+        char geminiMsg[GEMINI_RESPONSE_MAX_LEN] = {0};
+        Serial.println("[Telegram] Task running");
+
+        if (xSemaphoreTake(gGeminiMutex, pdMS_TO_TICKS(500)) == pdTRUE) {
+            client.stop(); // Ensure previous session is dead
+            client.setBufferSizes(512, 512); // Force smaller SSL buffers to save heap
+            client.setInsecure();
+            if (gGeminiResponse[0] != '\0') {
+                strncpy(geminiMsg, gGeminiResponse, GEMINI_RESPONSE_MAX_LEN - 1);
+                geminiMsg[GEMINI_RESPONSE_MAX_LEN - 1] = '\0';
+                gGeminiResponse[0] = '\0';
+            }
+            xSemaphoreGive(gGeminiMutex);
         }
+
+        if (geminiMsg[0] != '\0') {
+            if (xSemaphoreTake(gNetworkMutex, pdMS_TO_TICKS(5000)) == pdTRUE) {
+                client.setInsecure();
+                int send = bot.sendMessage(CHAT_ID, String(geminiMsg), "");
+                xSemaphoreGive(gNetworkMutex);
+                Serial.print("Send status: ");
+                Serial.println(send);
+                Serial.print("Free Heap: ");
+                Serial.println(ESP.getFreeHeap());
+
+            } else {
+                Serial.println("[Telegram] Failed to acquire network mutex");
+            }
+        }
+
+        vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }

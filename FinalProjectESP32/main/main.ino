@@ -11,17 +11,12 @@
 #include "gemini.h"
 #include "telegram_tx.h"
 
-/* ── Shared handles ──────────────────────────────────────────────────────── */
 SensorData_t      gSensorData  = {0};
 SemaphoreHandle_t gSensorMutex = NULL;
 
-/* ── Monitor task ────────────────────────────────────────────────────────── */
-void vMonitorTask(void *pvParameters) {
-    (void)pvParameters;
-    while (1) {
-        vTaskDelay(pdMS_TO_TICKS(5000));
-    }
-}
+char gGeminiResponse[GEMINI_RESPONSE_MAX_LEN] = {0};
+SemaphoreHandle_t gGeminiMutex = NULL;
+volatile bool gGeminiTrigger = false;
 
 void WiFi_Connect(void) {
     if (WiFi.status() == WL_CONNECTED) {
@@ -30,17 +25,19 @@ void WiFi_Connect(void) {
     }
     WiFi.mode(WIFI_STA);
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+    Serial.print("connecting..");
     while (WiFi.status() != WL_CONNECTED) { delay(250); }
     Serial.println(WiFi.localIP());
 }
 
+SemaphoreHandle_t gNetworkMutex = NULL;
+
 void setup() {
     Serial.begin(115200);
-    delay(3000);
-
     gSensorMutex = xSemaphoreCreateMutex();
+    gGeminiMutex = xSemaphoreCreateMutex();
+    gNetworkMutex = xSemaphoreCreateMutex();
     DHT_Init();
-
     UART_RX_Init();
     UART_TX_Init();
 
@@ -48,12 +45,10 @@ void setup() {
     Telegram_Init();
     Gemini_Init();
 
-    xTaskCreate(vTelegramTask, "Telegram", TELEGRAM_TASK_STACK_SIZE, NULL, TELEGRAM_TASK_PRIORITY, NULL);
-
-    xTaskCreate(vDHTTask,      "DHT",      DHT_TASK_STACK_SIZE, NULL, TELEGRAM_TASK_PRIORITY, NULL);
-    xTaskCreate(vMonitorTask,  "Monitor",  2048,                NULL, TELEGRAM_TASK_PRIORITY,                 NULL);
-
-    xTaskCreate(vUartRxTask,   "UartRX",   4096,                NULL, 4,                 NULL);
+    xTaskCreate(vTelegramTask, "Telegram", TELEGRAM_TASK_STACK_SIZE, NULL, 2, NULL);
+    xTaskCreate(vDHTTask, "DHT", DHT_TASK_STACK_SIZE, NULL, 2, NULL);
+    xTaskCreate(vUartRxTask, "UartRX", 4096, NULL, 4, NULL);
+    xTaskCreate(vGeminiTask, "Gemini", 8192, NULL, 2, NULL);
 }
 
 void loop() {

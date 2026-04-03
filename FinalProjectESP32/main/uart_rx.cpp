@@ -52,15 +52,24 @@ static void parseAndStore(uint8_t *pkt) {
     uint8_t temp = pkt[10];
 
     UART_TX_SendCmd(on_off == 1 ? TX_CMD_LED_ON : TX_CMD_LED_OFF);
+    if (on_off) {
+        Serial.println("[UART] Valid packet received:");
+        Serial.print("  tap_event:       "); Serial.println(tap);
+        Serial.print("  on_off_mode:     "); Serial.println(on_off);
+        Serial.print("  light_raw:       "); Serial.println(light);
+        Serial.print("  sound_raw:       "); Serial.println(sound);
+        Serial.print("  sound_triggered: "); Serial.println(triggered);
+        Serial.print("  env_cond: "); Serial.println(envConditionStr(env_cond));
+        Serial.print("  temp:     "); Serial.println(temp);
+    }
 
-    Serial.println("[UART] Valid packet received:");
-    Serial.print("  tap_event:       "); Serial.println(tap);
-    Serial.print("  on_off_mode:     "); Serial.println(on_off);
-    Serial.print("  light_raw:       "); Serial.println(light);
-    Serial.print("  sound_raw:       "); Serial.println(sound);
-    Serial.print("  sound_triggered: "); Serial.println(triggered);
-    Serial.print("  env_cond: "); Serial.println(envConditionStr(env_cond));
-    Serial.print("  temp:     "); Serial.println(temp);
+    static uint8_t sPrevOnOff = 0;
+
+    if (sPrevOnOff == 1 && on_off == 0) {
+        gGeminiTrigger = true;   // focus session just ended
+        Serial.println("[UART] Timer ended — Gemini trigger set");
+    }
+    sPrevOnOff = on_off;
 
     if (xSemaphoreTake(gSensorMutex, pdMS_TO_TICKS(10)) == pdTRUE) {
         gSensorData.tap_event       = tap;
@@ -172,5 +181,6 @@ void vUartRxTask(void *pvParameters) {
             /* Valid — parse and store */
             parseAndStore(buf);
         }
+        vTaskDelay(pdMS_TO_TICKS(10));
     }
 }

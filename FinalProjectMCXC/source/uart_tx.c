@@ -82,7 +82,7 @@ void vTxTask(void *pvParameters)
 
     while (1) {
         /* Block up to 100ms for a notify from vEnvTask, or send periodically */
-        ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(100));
+        ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(1000));
 
         if (xSemaphoreTake(gSensorMutex, pdMS_TO_TICKS(10)) == pdTRUE) {
             tap       = (uint8_t)gSensorData.tap_event;

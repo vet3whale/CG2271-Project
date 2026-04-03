@@ -24,4 +24,12 @@ typedef struct {
 extern SensorData_t      gSensorData;
 extern SemaphoreHandle_t gSensorMutex;
 
+#define GEMINI_RESPONSE_MAX_LEN 512
+
+extern char gGeminiResponse[GEMINI_RESPONSE_MAX_LEN];
+extern SemaphoreHandle_t gGeminiMutex;
+volatile extern bool gGeminiTrigger;
+
+extern SemaphoreHandle_t gNetworkMutex;
+
 #endif // SHARED_DATA_H
