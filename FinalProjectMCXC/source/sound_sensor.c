@@ -92,8 +92,8 @@ void sound_sensor_init(void){
     ADC0->SC2 &= ~ADC_SC2_REFSEL_MASK;
     ADC0->SC2 |=  ADC_SC2_REFSEL(0b01);
 
-    ADC0->SC3 &= ~ADC_SC3_AVGE_MASK;
-    ADC0->SC3 |=  ADC_SC3_AVGE(0);
+    ADC0->SC3 |= ADC_SC3_AVGE_MASK;
+    ADC0->SC3 |= ADC_SC3_AVGS(0b11);
     ADC0->SC3 &= ~ADC_SC3_ADCO_MASK;
     ADC0->SC3 |=  ADC_SC3_ADCO(0);
 
@@ -143,50 +143,42 @@ void vSoundTask(void *pvParameters){
     // PRINTF("Sound: baseline=%u  trigger_delta=%u\r\n\r\n", baseline, TRIGGER_DELTA);
 
     /* ---- Phase 2: Peak-to-peak monitoring ---- */
-    while (1)
-    {
-        uint16_t peak      = 0U;
-        uint16_t trough    = 0xFFFFU;
-        uint8_t  aboveCount = 0U;
+	while (1)
+	{
+		uint16_t peak = 0, trough = 0xFFFF, aboveCount = 0;
 
-        /* Sample as fast as possible — 30 samples × 1ms ≈ 30ms window */
-        for (uint32_t i = 0U; i < PEAK_SAMPLE_COUNT; i++)
-        {
-            xSemaphoreTake(gADCMutex, portMAX_DELAY);
-            sample = sound_sensor_read();
-            xSemaphoreGive(gADCMutex);
+		/* Phase 2: High-Speed Burst (No task switching during this 5-10ms window) */
+		xSemaphoreTake(gADCMutex, portMAX_DELAY);
+		for (uint32_t i = 0U; i < PEAK_SAMPLE_COUNT; i++)
+		{
+			// Use your existing read function (polling COCO flag)
+			sample = sound_sensor_read();
 
-            if (sample > peak)   peak   = sample;
-            if (sample < trough) trough = sample;
+			if (sample > peak)   peak   = sample;
+			if (sample < trough) trough = sample;
 
-            /* Count samples deviating from baseline in either direction */
-            uint16_t dev = (sample > baseline)
-                           ? (sample - baseline)
-                           : (baseline - sample);
-            if (dev > TRIGGER_DELTA) aboveCount++;
+			uint16_t dev = (sample > baseline) ? (sample - baseline) : (baseline - sample);
+			if (dev > TRIGGER_DELTA) aboveCount++;
+		}
+		xSemaphoreGive(gADCMutex);
 
-            vTaskDelay(pdMS_TO_TICKS(PEAK_SAMPLE_DELAY));
-        }
+		uint16_t swing = (peak > trough) ? (peak - trough) : 0U;
 
-        /* Peak-to-peak swing — catches both the compression and rarefaction
-         * of the pressure wave, so sensitivity is ~2x vs. one-sided peakDev */
-        uint16_t swing = (peak > trough) ? (peak - trough) : 0U;
+		bool is_sustained = (aboveCount > (PEAK_SAMPLE_COUNT / 10));
+		bool is_loud      = (swing > TRIGGER_DELTA);
 
-        /* Construction noise: large swing, at least 1 spike above threshold.
-         * No upper bound on aboveCount — impacts can last several ms          */
-        bool triggered = (swing > TRIGGER_DELTA) && (aboveCount >= 1U);
+		bool triggered = is_loud && is_sustained;
 
-        // PRINTF("[Sound] peak=%u trough=%u swing=%u above=%u trig=%d\r\n",
-        //         peak, trough, swing, aboveCount, triggered);
+		if (xSemaphoreTake(gSensorMutex, pdMS_TO_TICKS(10)) == pdTRUE)
+		{
+			gSensorData.sound_raw       = peak;
+			gSensorData.sound_triggered = triggered ? 1U : 0U;
+			xSemaphoreGive(gSensorMutex);
+		}
 
-        if (xSemaphoreTake(gSensorMutex, pdMS_TO_TICKS(10)) == pdTRUE)
-        {
-            gSensorData.sound_raw       = peak;   /* still report max reading */
-            gSensorData.sound_triggered = triggered ? 1U : 0U;
-            xSemaphoreGive(gSensorMutex);
-        }
-
-        vTaskDelay(pdMS_TO_TICKS(SAMPLE_DELAY_MS));
-    }
+		/* CRITICAL: Yield the CPU here to prevent starvation of Priority 1 tasks.
+		 * Since we didn't delay inside the for-loop, we delay longer here. */
+		vTaskDelay(pdMS_TO_TICKS(SAMPLE_DELAY_MS));
+	}
 }
 

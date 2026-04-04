@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <WiFi.h>
+#include <HTTPClient.h>
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -52,6 +53,34 @@ void setup() {
     xTaskCreate(vGeminiTask,   "Gemini",   6144, NULL, 2, NULL);
 }
 
+unsigned long lastPingTime = 0;
+const unsigned long PING_INTERVAL_MS = 120000; // 2 minutes
+
 void loop() {
+    if (WiFi.status() != WL_CONNECTED) {
+        Serial.println("[Network] Wi-Fi lost. Reconnecting...");
+        WiFi_Connect(); 
+    }
+
+    if (millis() - lastPingTime > PING_INTERVAL_MS) {
+        lastPingTime = millis();
+        
+        // Take the same mutex used by Gemini and Telegram so they don't collide
+        if (xSemaphoreTake(gNetworkMutex, pdMS_TO_TICKS(2000)) == pdTRUE) {
+            Serial.println("[KeepAlive] Pinging to keep network warm...");
+            
+            HTTPClient http;
+            // Pinging a fast, reliable endpoint like Google or a captive portal
+            http.begin("http://clients3.google.com/generate_204"); 
+            int httpCode = http.GET();
+            
+            if (httpCode > 0) Serial.printf("[KeepAlive] Success (Code: %d)\n", httpCode);
+            else Serial.printf("[KeepAlive] Failed: %s\n", http.errorToString(httpCode).c_str());
+            
+            http.end();
+            xSemaphoreGive(gNetworkMutex);
+        }
+    }
+
     vTaskDelay(pdMS_TO_TICKS(1000));
 }

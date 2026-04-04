@@ -2,6 +2,7 @@
 #include <ESP32_AI_Connect.h>
 #include "gemini.h"
 #include "passwords.h"
+#include "uart_packet.h"
 #include "shared_data.h"
 
 /* ── Cooldown ────────────────────────────────────────────────────────────── */
@@ -27,7 +28,13 @@ String postGemini(const String &prompt) {
     if (xSemaphoreTake(gNetworkMutex, pdMS_TO_TICKS(5000)) == pdTRUE) {
         aiClient.setChatMaxTokens(300);
         aiClient.setChatTemperature(0.7);
-        aiClient.setChatSystemRole("You are a study environment AI assistant.");
+        aiClient.setChatSystemRole(
+            "You are a funny study buddy. "
+            "You reply in casual Singlish-English, playful and teasing, like a close friend roasting the user a bit. "
+            "Be dramatic and funny, but still helpful. "
+            "Do not be vulgar, hateful, or overly harsh. "
+            "Always include one practical suggestion."
+        );
         response = aiClient.chat(prompt);
         xSemaphoreGive(gNetworkMutex);
     } else {
@@ -64,18 +71,50 @@ String postGemini(const String &prompt) {
     return response;
 }
 
+static const char* geminiEnvConditionStr(uint8_t cond)
+{
+    switch (cond) {
+        case ENV_GOOD:     return "GOOD";
+        case ENV_TOO_DARK: return "TOO DARK";
+        case ENV_TOO_LOUD: return "TOO LOUD";
+        case ENV_TOO_HOT:  return "TOO HOT";
+        case ENV_TOO_COLD: return "TOO COLD";
+        case ENV_MODERATE: return "MODERATE";
+        case ENV_POOR:     return "POOR";
+        default:           return "UNKNOWN";
+    }
+}
+
 void vGeminiTask(void *pvParameters) {
     (void)pvParameters;
 
+    // Ideal targets
+    const float IDEAL_TEMP_MIN = 24.0f;
+    const float IDEAL_TEMP_MAX = 27.0f;
+    const float IDEAL_HUM_MIN  = 40.0f;
+    const float IDEAL_HUM_MAX  = 60.0f;
+    const uint16_t IDEAL_LIGHT_MIN = 400;
+    const uint16_t IDEAL_LIGHT_MAX = 700;
+    const uint16_t IDEAL_SOUND_MAX = 120;
+
     while (1) {
         if (xSemaphoreTake(gGeminiSemaphore, portMAX_DELAY) == pdTRUE) {
-            
-            float t = 0.0;
-            float h = 0.0;
+
+            float temp = 0.0f;
+            float humidity = 0.0f;
+            uint16_t light = 0;
+            uint16_t sound = 0;
+            uint8_t soundTriggered = 0;
+            uint8_t envCondition = 0;
             uint32_t duration_sec = 0;
+
             if (xSemaphoreTake(gSensorMutex, pdMS_TO_TICKS(100)) == pdTRUE) {
-                t = gSensorData.esp_temp;
-                h = gSensorData.esp_humidity;
+                temp = gSensorData.esp_temp;
+                humidity = gSensorData.esp_humidity;
+                light = gSensorData.light_raw;
+                sound = gSensorData.sound_raw;
+                soundTriggered = gSensorData.sound_triggered;
+                envCondition = gSensorData.env_condition;
                 duration_sec = gSensorData.session_duration_sec;
                 xSemaphoreGive(gSensorMutex);
             }
@@ -84,13 +123,44 @@ void vGeminiTask(void *pvParameters) {
             uint32_t secs = duration_sec % 60;
             String timeStr = String(mins) + " minutes and " + String(secs) + " seconds";
 
-            // Build the prompt with the newly calculated time
-            String prompt = "The focus session just ended. The user studied for " + timeStr + 
-                            ". Temp was " + String(t, 1) + "C, humidity " + String(h, 1) + 
-                            "%. Give a short study session recap praising them for their time " +
-                            "and one tip based on the environment. Keep response to 400 characters. " +
-                            "Include an emoji and no * in the text.";
-            
+            String envStr = String(geminiEnvConditionStr(envCondition));
+
+            String prompt =
+                "You are a study environment assistant. "
+                "A study session has just ended.\n\n"
+
+                "Measured session data:\n"
+                "- Study duration: " + timeStr + "\n"
+                "- Average temperature: " + String(temp, 1) + " C\n"
+                "- Average humidity: " + String(humidity, 1) + " %\n"
+                "- Average light: " + String(light) + "\n"
+                "- Average sound: " + String(sound) + "\n"
+                "- Sound triggered: " + String(soundTriggered) + "\n"
+                "- Overall environment condition: " + envStr + "\n\n"
+
+                "Ideal study environment:\n"
+                "- Temperature: " + String(IDEAL_TEMP_MIN, 1) + " to " + String(IDEAL_TEMP_MAX, 1) + " C\n"
+                "- Humidity: " + String(IDEAL_HUM_MIN, 1) + " to " + String(IDEAL_HUM_MAX, 1) + " %\n"
+                "- Light: " + String(IDEAL_LIGHT_MIN) + " to " + String(IDEAL_LIGHT_MAX) + "\n"
+                "- Sound: below " + String(IDEAL_SOUND_MAX) + "\n"
+                "- Repeated sound triggers are bad for focus\n\n"
+
+                "Instructions:\n"
+                "1. Praise the user briefly for completing the session.\n"
+                "2. Compare the measured values against the ideal ranges.\n"
+                "3. Mention only the most important 1 or 2 environment issues.\n"
+                "4. Give exactly one practical suggestion.\n"
+                "5. If conditions were generally good, say so clearly.\n"
+                "6. Keep the response under 350 characters.\n"
+                "7. Reply like a funny friend in casual Singlish. "
+                    "If the environment is bad, roast the user lightly, for example like "
+                    "'brooo u tweaking sia, why you study in the dark'. "
+                    "Be playful, dramatic, and short. "
+                    "Mention the biggest problem only, then give one practical fix. "
+                    "Keep it under 220 characters. "
+                    "Use exactly one emoji. "
+                    "No markdown, no asterisks.";
+
             postGemini(prompt);
         }
     }

@@ -24,7 +24,7 @@ static void build_packet(uint8_t tap, uint8_t on_off, uint8_t paused,
     pkt[7]  = (uint8_t)(sound >> 8);
     pkt[8]  = (uint8_t)(sound & 0xFF);
     pkt[9]  = triggered;
-    pkt[10]  = env_cond;                        /* ← env_condition byte */
+    pkt[10] = env_cond;
     pkt[11] = temp;
     pkt[12] = temp_frac;
     for (uint8_t i = 2; i <= PACKET_LEN-3; i++) chk ^= pkt[i];  /* ← XOR[2..9] */

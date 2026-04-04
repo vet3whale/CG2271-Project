@@ -34,8 +34,8 @@
 #define TRIGGER_DELTA       80U     // Tune this value only
 
 /* Peak-hold: 5 samples x 4 ms apart = 20 ms window per cycle */
-#define PEAK_SAMPLE_COUNT   30U
-#define PEAK_SAMPLE_DELAY   1U      // ms between each peak-hold sample
+#define PEAK_SAMPLE_COUNT   400U
+#define PEAK_SAMPLE_DELAY   0U
 
 /* -----------------------------------------------------------------------
  * FreeRTOS Task Configuration
