@@ -15,6 +15,15 @@
 #include "uart_rx.h"
 #include "env_condition.h"
 
+// task priority levels
+#define TAPTASK_PRIORITY 4
+#define ENVTASK_PRIORITY 3
+#define SOUNDTASK_PRIORITY 2
+#define LIGHTTASK_PRIORITY 2
+#define LEDTASK_PRIORITY 2
+#define RXTASK_PRIORITY 2
+#define TXTASK_PRIORITY 1
+
 int main(void) {
     BOARD_InitBootPins();
     BOARD_InitBootClocks();
@@ -28,18 +37,17 @@ int main(void) {
     TAP_Init();
     led_init();
     initUART2_RXTX(MCXC_UART_BAUD);
+    initUART2_RX_Interrupts();      // Enable the Queue and Interrupts
 
-    xTaskCreate(LIGHT_SENSOR_Task, "Light",  configMINIMAL_STACK_SIZE+128, NULL, 2, NULL);
-    xTaskCreate(vTapTask, "Tap", configMINIMAL_STACK_SIZE, NULL, 4, NULL);
-    xTaskCreate(vSoundTask, "Sound", configMINIMAL_STACK_SIZE, NULL, 2, NULL);
+    xTaskCreate(LIGHT_SENSOR_Task, "Light",  configMINIMAL_STACK_SIZE+128, NULL, LIGHTTASK_PRIORITY, NULL);
+    xTaskCreate(vTapTask, "Tap", configMINIMAL_STACK_SIZE, NULL, TAPTASK_PRIORITY, NULL);
+    xTaskCreate(vSoundTask, "Sound", configMINIMAL_STACK_SIZE, NULL, SOUNDTASK_PRIORITY, NULL);
 
-    xTaskCreate(vLEDTask, "LED", configMINIMAL_STACK_SIZE, NULL, 2, NULL);
-    xTaskCreate(vTxTask, "TXTask", configMINIMAL_STACK_SIZE+128, NULL, 2, NULL);
-    xTaskCreate(vRXTask, "RXTask", configMINIMAL_STACK_SIZE, NULL, 2, NULL);
+    xTaskCreate(vLEDTask, "LED", configMINIMAL_STACK_SIZE, NULL, LEDTASK_PRIORITY, NULL);
+    xTaskCreate(vTxTask, "TXTask", configMINIMAL_STACK_SIZE+128, NULL, TXTASK_PRIORITY, NULL);
+    xTaskCreate(vRXTask, "RXTask", configMINIMAL_STACK_SIZE, NULL, RXTASK_PRIORITY, NULL);
 
-    xTaskCreate(vEnvTask, "EnvTask",configMINIMAL_STACK_SIZE+128, NULL, 3, NULL);
-
-    // xTaskCreate(vPrintTask, "Print", 256, NULL, 3, NULL);
+    xTaskCreate(vEnvTask, "EnvTask",configMINIMAL_STACK_SIZE+128, NULL, ENVTASK_PRIORITY, NULL);
 
     vTaskStartScheduler();
     while(1);

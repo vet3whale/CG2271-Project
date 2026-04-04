@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include "FreeRTOS.h"
 #include "task.h"
+#include "queue.h"
 #include "uart_packet.h" // reuses PACKET_START1, PACKET_START2, PACKET_END
 
 /*
@@ -25,7 +26,9 @@
 
 #define RX_TASK_STACK    128U
 
-void initUART2_RX(void);
+extern QueueHandle_t xRxQueue;
+
+void initUART2_RX_Interrupts(void);
 void vRXTask(void *pvParameters);
 
 #endif /* UART_RX_H_ */

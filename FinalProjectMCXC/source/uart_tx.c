@@ -8,10 +8,9 @@
 #include "clock_config.h"
 #include "fsl_debug_console.h"
 
-/* ── Private: build 12-byte TX packet ───────────────────────────────────── */
 static void build_packet(uint8_t tap, uint8_t on_off, uint8_t paused,
                          uint16_t light, uint16_t sound,
-                         uint8_t triggered, uint8_t env_cond, uint8_t temp,  /* ← ADDED */
+                         uint8_t triggered, uint8_t env_cond, uint8_t temp, uint8_t temp_frac,
                          uint8_t *pkt)
 {
     uint8_t chk = 0;
@@ -27,9 +26,10 @@ static void build_packet(uint8_t tap, uint8_t on_off, uint8_t paused,
     pkt[9]  = triggered;
     pkt[10]  = env_cond;                        /* ← env_condition byte */
     pkt[11] = temp;
-    for (uint8_t i = 2; i <= 11; i++) chk ^= pkt[i];  /* ← XOR[2..9] */
-    pkt[12] = chk;
-    pkt[13] = PACKET_END;
+    pkt[12] = temp_frac;
+    for (uint8_t i = 2; i <= PACKET_LEN-3; i++) chk ^= pkt[i];  /* ← XOR[2..9] */
+    pkt[13] = chk;
+    pkt[14] = PACKET_END;
 }
 
 /* ── Private: blocking UART2 send ───────────────────────────────────────── */
@@ -73,12 +73,11 @@ void initUART2_RXTX(uint32_t baud_rate)
     UART2->C2 |= (UART_C2_TE_MASK | UART_C2_RE_MASK);
 }
 
-/* ── Public: TX task ────────────────────────────────────────────────────── */
 void vTxTask(void *pvParameters)
 {
     (void)pvParameters;
     uint8_t  packet[PACKET_LEN];
-    uint8_t  tap = 0, on_off = 0, paused = 0, triggered = 0, env_cond = ENV_UNKNOWN, temp = 0;
+    uint8_t  tap = 0, on_off = 0, paused = 0, triggered = 0, env_cond = ENV_UNKNOWN, temp = 0, temp_frac = 0;
     uint16_t light = 0, sound = 0;
 
     while (1) {
@@ -86,19 +85,21 @@ void vTxTask(void *pvParameters)
         ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(200));
 
         if (xSemaphoreTake(gSensorMutex, pdMS_TO_TICKS(10)) == pdTRUE) {
-            tap       = (uint8_t)gSensorData.tap_event;
-            on_off    = (uint8_t)gSensorData.on_off;
-            paused = (uint8_t)gSensorData.paused;
-            light     = gSensorData.light_raw;
-            sound     = gSensorData.sound_raw;
-            triggered = gSensorData.sound_triggered;
-            env_cond  = gSensorData.env_condition;
-            temp = gSensorData.temperature;
-            if (tap) gSensorData.tap_event = 0;
+            tap       = (uint8_t)gAverageSensorData.tap_event;
+            on_off    = (uint8_t)gAverageSensorData.on_off;
+            paused = (uint8_t)gAverageSensorData.paused;
+            light     = gAverageSensorData.light_raw;
+            sound     = gAverageSensorData.sound_raw;
+            triggered = gAverageSensorData.sound_triggered;
+            env_cond  = gAverageSensorData.env_condition;
+            temp = gAverageSensorData.temperature;
+            temp_frac = gAverageSensorData.temp_frac;
+            if (tap) gAverageSensorData.tap_event = 0;
             xSemaphoreGive(gSensorMutex);
         }
 
-        build_packet(tap, on_off, paused, light, sound, triggered, env_cond, temp, packet); /* ← PASS env_cond */
+        build_packet(tap, on_off, paused, light, sound, triggered, env_cond, temp, temp_frac, packet);
         uart2_send_blocking(packet, PACKET_LEN);
+        vTaskDelay(pdMS_TO_TICKS(10));
     }
 }

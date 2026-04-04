@@ -57,6 +57,7 @@ static void parseAndStore(uint8_t *pkt) {
     uint8_t  triggered = pkt[9];
     uint8_t env_cond  = pkt[10];
     uint8_t temp = pkt[11];
+    uint8_t temp_frac = pkt[12];
 
     UART_TX_SendCmd(on_off == 1 ? TX_CMD_LED_ON : TX_CMD_LED_OFF);
     if (on_off) {
@@ -64,11 +65,11 @@ static void parseAndStore(uint8_t *pkt) {
         Serial.print("  tap_event:       "); Serial.println(tap);
         Serial.print("  on_off_mode:     "); Serial.println(on_off);
         Serial.print("  paused:          "); Serial.println(paused);
-        Serial.print("  light_raw:       "); Serial.println(light);
-        Serial.print("  sound_raw:       "); Serial.println(sound);
+        Serial.print("  avg. light_raw:  "); Serial.println(light);
+        Serial.print("  avg sound_raw:   "); Serial.println(sound);
         Serial.print("  sound_triggered: "); Serial.println(triggered);
-        Serial.print("  env_cond: "); Serial.println(envConditionStr(env_cond));
-        Serial.print("  temp:     "); Serial.println(temp);
+        Serial.print("  env_cond:        "); Serial.println(envConditionStr(env_cond));
+        Serial.print("  avg. temp:       "); Serial.print(temp); Serial.print("."); Serial.print(temp_frac); Serial.println("C");
     }
 
     // 1. Detect START: on_off 0 -> 1

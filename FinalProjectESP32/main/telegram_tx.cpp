@@ -31,8 +31,9 @@ void vTelegramTask(void *pvParameters) {
                     Serial.println("[Telegram] BLOCKED: Cooldown active. Dropping duplicate message.");
                     xSemaphoreGive(gNetworkMutex);
                     continue;
-                }                
-                if (bot.sendMessage(CHAT_ID, String(rxBuffer), "")) {
+                }                  
+
+                if (!(sLastTelegramSend && (now - sLastTelegramSend) < TELEGRAM_COOLDOWN_MS) && bot.sendMessage(CHAT_ID, String(rxBuffer), "")) {
                     Serial.println("[Telegram] Send success");
                 } else {
                     Serial.println("[Telegram] Send failed");

@@ -19,10 +19,11 @@
  * [9]  sound_triggered
  * [10]  env_condition
  * [11] temp
- * [12] checksum XOR[2..9]
- * [13] END
+ * [12] temp_frac
+ * [13] checksum XOR[2..9]
+ * [14] END
  */
-#define PACKET_LEN      14U 
+#define PACKET_LEN      15U 
 
 /* ── ESP32 → MCXC Temperature packet (6 bytes, NEW) ─────────────────────
  * [0] START1

@@ -39,7 +39,7 @@
 
 /* --- PWM / Timing Settings --- */
 #define LED_PWM_FREQ_HZ     1000U
-#define LED_DUTY_PCT        50U
+#define LED_DUTY_PCT        70U
 #define LED_POLL_MS         50U
 #define LED_TASK_STACK      128U
 
