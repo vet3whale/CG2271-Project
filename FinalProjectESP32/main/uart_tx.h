@@ -23,6 +23,6 @@
  */
 void UART_TX_Init(void);
 void UART_TX_SendCmd(uint8_t cmd);
-void UART_TX_SendTemp(int8_t temp_int, uint8_t temp_frac);   /* NEW */
+void UART_TX_SendTemp(int8_t temp_int, uint8_t temp_frac, int8_t hum_int, uint8_t hum_frac);   /* NEW */
 
 #endif /* UART_TX_H */

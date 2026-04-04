@@ -58,6 +58,8 @@ static void parseAndStore(uint8_t *pkt) {
     uint8_t env_cond  = pkt[10];
     uint8_t temp = pkt[11];
     uint8_t temp_frac = pkt[12];
+    uint8_t hum = pkt[13];
+    uint8_t hum_frac = pkt[14];
 
     UART_TX_SendCmd(on_off == 1 ? TX_CMD_LED_ON : TX_CMD_LED_OFF);
     if (on_off) {
@@ -70,6 +72,7 @@ static void parseAndStore(uint8_t *pkt) {
         Serial.print("  sound_triggered: "); Serial.println(triggered);
         Serial.print("  env_cond:        "); Serial.println(envConditionStr(env_cond));
         Serial.print("  avg. temp:       "); Serial.print(temp); Serial.print("."); Serial.print(temp_frac); Serial.println("C");
+        Serial.print("  avg. hum:        "); Serial.print(hum); Serial.print("."); Serial.print(hum_frac); Serial.println("%");
     }
 
     // 1. Detect START: on_off 0 -> 1
@@ -118,11 +121,16 @@ static void parseAndStore(uint8_t *pkt) {
         gSensorData.on_off          = on_off;
         gSensorData.paused          = paused;
         gSensorData.light_raw       = light;
+        gSensorData.temp            = temp;
+        gSensorData.temp_frac       = temp_frac;
+        gSensorData.hum             = hum;
+        gSensorData.hum_frac        = hum_frac;
         gSensorData.sound_raw       = sound;
         gSensorData.sound_triggered = triggered;
         gSensorData.env_condition = env_cond;
         gSensorData.session_duration_sec = s_total_focused_ms / 1000;
         
+
         xSemaphoreGive(gSensorMutex);
     } else {
         Serial.println("[UART] Warning: could not take mutex — skipping write");

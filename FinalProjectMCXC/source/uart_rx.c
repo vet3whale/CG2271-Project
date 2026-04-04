@@ -60,18 +60,22 @@ void vRXTask(void *pvParameters) {
             }
         }
         else if (start2 == TEMP_PKT_START2) {
-            int8_t temp_int;
-            uint8_t temp_frac, chk, end;
+            int8_t temp_int, hum_int;
+            uint8_t temp_frac, hum_frac, chk, end;
 
             if (xQueueReceive(xRxQueue, (uint8_t*)&temp_int, pdMS_TO_TICKS(50)) != pdTRUE) continue;
             if (xQueueReceive(xRxQueue, &temp_frac, pdMS_TO_TICKS(50)) != pdTRUE) continue;
+            if (xQueueReceive(xRxQueue, (uint8_t*)&hum_int, pdMS_TO_TICKS(50)) != pdTRUE) continue;
+            if (xQueueReceive(xRxQueue, &hum_frac, pdMS_TO_TICKS(50)) != pdTRUE) continue;
             if (xQueueReceive(xRxQueue, &chk, pdMS_TO_TICKS(50)) != pdTRUE) continue;
             if (xQueueReceive(xRxQueue, &end, pdMS_TO_TICKS(50)) != pdTRUE) continue;
 
-            if (chk == TEMP_PKT_CHECKSUM(temp_int, temp_frac) && end == PACKET_END) {
+            if (chk == (TEMP_PKT_CHECKSUM(temp_int, temp_frac)^TEMP_PKT_CHECKSUM(hum_int, hum_frac)) && end == PACKET_END) {
                 if (xSemaphoreTake(gSensorMutex, pdMS_TO_TICKS(10)) == pdTRUE) {
                     gSensorData.temperature = temp_int;
                     gSensorData.temp_frac   = temp_frac;
+                    gSensorData.humidity    = hum_int;
+					gSensorData.hum_frac    = hum_frac;
                     xSemaphoreGive(gSensorMutex);
                 }
                 xSemaphoreGive(gTempReadySem);

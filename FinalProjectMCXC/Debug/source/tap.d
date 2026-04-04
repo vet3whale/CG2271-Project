@@ -54,6 +54,8 @@ source/tap.o source/tap.d: ../source/tap.c ../source/tap.h \
  C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\freertos\freertos-kernel\include/queue.h \
  C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\freertos\freertos-kernel\include/task.h \
  C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\freertos\freertos-kernel\include/list.h \
+ ../source/buzzer.h \
+ C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\freertos\freertos-kernel\include/task.h \
  ../source/shared_data.h \
  C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\utilities\debug_console/fsl_debug_console.h \
  C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\drivers/fsl_common.h \
@@ -64,8 +66,7 @@ source/tap.o source/tap.d: ../source/tap.c ../source/tap.h \
  C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\drivers/fsl_common.h \
  C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\component\serial_manager/fsl_component_serial_manager.h \
  C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\component\serial_manager/fsl_component_serial_port_uart.h \
- C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\component\uart/fsl_adapter_uart.h \
- C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\freertos\freertos-kernel\include/task.h
+ C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\component\uart/fsl_adapter_uart.h
 ../source/tap.h:
 C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\device/MCXC444.h:
 C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\device\periph2/PERI_ADC.h:
@@ -122,6 +123,8 @@ C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalPr
 C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\freertos\freertos-kernel\include/queue.h:
 C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\freertos\freertos-kernel\include/task.h:
 C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\freertos\freertos-kernel\include/list.h:
+../source/buzzer.h:
+C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\freertos\freertos-kernel\include/task.h:
 ../source/shared_data.h:
 C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\utilities\debug_console/fsl_debug_console.h:
 C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\drivers/fsl_common.h:
@@ -133,4 +136,3 @@ C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalPr
 C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\component\serial_manager/fsl_component_serial_manager.h:
 C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\component\serial_manager/fsl_component_serial_port_uart.h:
 C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\component\uart/fsl_adapter_uart.h:
-C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalProjectMCXC\freertos\freertos-kernel\include/task.h:

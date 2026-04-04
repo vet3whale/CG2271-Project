@@ -10,6 +10,7 @@
 #include "light_sensor.h"
 #include "tap.h"
 #include "led.h"
+#include "buzzer.h"
 #include "sound_sensor.h"
 #include "uart_tx.h"
 #include "uart_rx.h"
@@ -23,6 +24,7 @@
 #define LEDTASK_PRIORITY 2
 #define RXTASK_PRIORITY 2
 #define TXTASK_PRIORITY 1
+#define BUZZERTASK_PRIORITY 3
 
 int main(void) {
     BOARD_InitBootPins();
@@ -36,6 +38,7 @@ int main(void) {
 
     TAP_Init();
     led_init();
+    buzzer_init();
     initUART2_RXTX(MCXC_UART_BAUD);
     initUART2_RX_Interrupts();      // Enable the Queue and Interrupts
 
@@ -44,6 +47,8 @@ int main(void) {
     xTaskCreate(vSoundTask, "Sound", configMINIMAL_STACK_SIZE, NULL, SOUNDTASK_PRIORITY, NULL);
 
     xTaskCreate(vLEDTask, "LED", configMINIMAL_STACK_SIZE, NULL, LEDTASK_PRIORITY, NULL);
+    xTaskCreate(vBuzzerTask, "Buzzer", configMINIMAL_STACK_SIZE, NULL, BUZZERTASK_PRIORITY, NULL);
+
     xTaskCreate(vTxTask, "TXTask", configMINIMAL_STACK_SIZE+128, NULL, TXTASK_PRIORITY, NULL);
     xTaskCreate(vRXTask, "RXTask", configMINIMAL_STACK_SIZE, NULL, RXTASK_PRIORITY, NULL);
 

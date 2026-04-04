@@ -35,7 +35,7 @@ SemaphoreHandle_t gNetworkMutex = NULL;
 
 void setup() {
     Serial.begin(115200);
-    gTelegramQueue = xQueueCreate(5, GEMINI_RESPONSE_MAX_LEN);
+    gTelegramQueue = xQueueCreate(1, GEMINI_RESPONSE_MAX_LEN);
     gSensorMutex = xSemaphoreCreateMutex();
     gGeminiMutex = xSemaphoreCreateMutex();
     gNetworkMutex = xSemaphoreCreateMutex();

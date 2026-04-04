@@ -20,6 +20,10 @@ typedef struct {
     uint16_t sound_raw;         // ADC 0-1023
     uint8_t  sound_triggered;   // 1 = sound event this cycle
     uint8_t  env_condition;
+    uint8_t  temp;
+    uint8_t  temp_frac;
+    uint8_t  hum;
+    uint8_t  hum_frac;
     uint32_t session_duration_sec;
 } SensorData_t;
 

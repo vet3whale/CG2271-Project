@@ -110,75 +110,86 @@ uint16_t sound_sensor_read(void){
     return (uint16_t)(ADC0->R[0] & 0xFFFFU);
 }
 
-/* -----------------------------------------------------------------------
- * Public: vSoundTask
- * Phase 1 — 5s calibration (holds gADCMutex for full window)
- * Phase 2 — peak-hold monitoring against baseline
- *            Trigger = (peak − baseline) > TRIGGER_DELTA
- *            sound_raw now stores the per-window MAX, not the last sample
- * ----------------------------------------------------------------------- */
 void vSoundTask(void *pvParameters){
     (void)pvParameters;
 
-    uint32_t sum      = 0U;
-    uint32_t count    = 0U;
-    uint16_t sample   = 0U;
+    uint32_t sum = 0U;
+    uint32_t count = 0U;
+    uint16_t sample = 0U;
     uint16_t baseline = 0U;
 
-    /* ---- Phase 1: Calibration ---- */
+    static uint16_t triggerCount30s = 0U;
+    static bool prevTriggered = false;
+    static TickType_t windowStart = 0;
+    static TickType_t lastEventTick = 0;
+
+    const TickType_t windowTicks = pdMS_TO_TICKS(30000);
+    const TickType_t rearmTicks  = pdMS_TO_TICKS(300);   // debounce / cooldown
+
+    // ---- Phase 1: Calibration ----
     for (uint32_t t = 0U; t < CAL_TIME_MS; t += SAMPLE_DELAY_MS)
-	{
-		xSemaphoreTake(gADCMutex, portMAX_DELAY);
-		sound_sensor_init();
-		sample = sound_sensor_read();
-		xSemaphoreGive(gADCMutex);
-		sum += sample;
-		count++;
+    {
+        xSemaphoreTake(gADCMutex, portMAX_DELAY);
+        sound_sensor_init();
+        sample = sound_sensor_read();
+        xSemaphoreGive(gADCMutex);
 
-		vTaskDelay(pdMS_TO_TICKS(SAMPLE_DELAY_MS));
-	}
+        sum += sample;
+        count++;
+        vTaskDelay(pdMS_TO_TICKS(SAMPLE_DELAY_MS));
+    }
 
-	baseline = (uint16_t)(sum / count);
+    baseline = (uint16_t)(sum / count);
 
-    // PRINTF("Sound: baseline=%u  trigger_delta=%u\r\n\r\n", baseline, TRIGGER_DELTA);
+    windowStart = xTaskGetTickCount();
 
-    /* ---- Phase 2: Peak-to-peak monitoring ---- */
-	while (1)
-	{
-		uint16_t peak = 0, trough = 0xFFFF, aboveCount = 0;
+    while (1)
+    {
+        uint16_t peak = 0, trough = 0xFFFF, aboveCount = 0;
 
-		/* Phase 2: High-Speed Burst (No task switching during this 5-10ms window) */
-		xSemaphoreTake(gADCMutex, portMAX_DELAY);
-		for (uint32_t i = 0U; i < PEAK_SAMPLE_COUNT; i++)
-		{
-			// Use your existing read function (polling COCO flag)
-			sample = sound_sensor_read();
+        xSemaphoreTake(gADCMutex, portMAX_DELAY);
+        for (uint32_t i = 0U; i < PEAK_SAMPLE_COUNT; i++)
+        {
+            sample = sound_sensor_read();
 
-			if (sample > peak)   peak   = sample;
-			if (sample < trough) trough = sample;
+            if (sample > peak) peak = sample;
+            if (sample < trough) trough = sample;
 
-			uint16_t dev = (sample > baseline) ? (sample - baseline) : (baseline - sample);
-			if (dev > TRIGGER_DELTA) aboveCount++;
-		}
-		xSemaphoreGive(gADCMutex);
+            uint16_t dev = (sample > baseline) ? (sample - baseline) : (baseline - sample);
+            if (dev > TRIGGER_DELTA) aboveCount++;
+        }
+        xSemaphoreGive(gADCMutex);
 
-		uint16_t swing = (peak > trough) ? (peak - trough) : 0U;
+        uint16_t swing = (peak > trough) ? (peak - trough) : 0U;
+        bool issustained = (aboveCount >= PEAK_SAMPLE_COUNT / 10);
+        bool isloud = (swing > TRIGGER_DELTA);
+        bool triggered = isloud && issustained;
 
-		bool is_sustained = (aboveCount > (PEAK_SAMPLE_COUNT / 10));
-		bool is_loud      = (swing > TRIGGER_DELTA);
+        TickType_t now = xTaskGetTickCount();
 
-		bool triggered = is_loud && is_sustained;
+        // Count only a new trigger event
+        if (triggered && !prevTriggered && (now - lastEventTick >= rearmTicks))
+        {
+            triggerCount30s++;
+            lastEventTick = now;
+        }
+        prevTriggered = triggered;
 
-		if (xSemaphoreTake(gSensorMutex, pdMS_TO_TICKS(10)) == pdTRUE)
-		{
-			gSensorData.sound_raw       = peak;
-			gSensorData.sound_triggered = triggered ? 1U : 0U;
-			xSemaphoreGive(gSensorMutex);
-		}
+        // Reset every 30 seconds
+        if ((now - windowStart) >= windowTicks)
+        {
+            triggerCount30s = 0U;
+            windowStart = now;
+        }
 
-		/* CRITICAL: Yield the CPU here to prevent starvation of Priority 1 tasks.
-		 * Since we didn't delay inside the for-loop, we delay longer here. */
-		vTaskDelay(pdMS_TO_TICKS(SAMPLE_DELAY_MS));
-	}
+        if (xSemaphoreTake(gSensorMutex, pdMS_TO_TICKS(10)) == pdTRUE)
+        {
+            gSensorData.sound_raw = peak;
+            gSensorData.sound_triggered = triggered ? 1U : 0U;
+            soundTriggerCount30s = triggerCount30s;
+            xSemaphoreGive(gSensorMutex);
+        }
+
+        vTaskDelay(pdMS_TO_TICKS(SAMPLE_DELAY_MS));
+    }
 }
-

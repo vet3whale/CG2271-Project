@@ -10,7 +10,7 @@
 
 static void build_packet(uint8_t tap, uint8_t on_off, uint8_t paused,
                          uint16_t light, uint16_t sound,
-                         uint8_t triggered, uint8_t env_cond, uint8_t temp, uint8_t temp_frac,
+                         uint8_t triggered, uint8_t env_cond, uint8_t temp, uint8_t temp_frac, uint8_t hum, uint8_t hum_frac,
                          uint8_t *pkt)
 {
     uint8_t chk = 0;
@@ -27,9 +27,11 @@ static void build_packet(uint8_t tap, uint8_t on_off, uint8_t paused,
     pkt[10] = env_cond;
     pkt[11] = temp;
     pkt[12] = temp_frac;
+    pkt[13] = hum;
+	pkt[14] = hum_frac;
     for (uint8_t i = 2; i <= PACKET_LEN-3; i++) chk ^= pkt[i];  /* ← XOR[2..9] */
-    pkt[13] = chk;
-    pkt[14] = PACKET_END;
+    pkt[15] = chk;
+    pkt[16] = PACKET_END;
 }
 
 /* ── Private: blocking UART2 send ───────────────────────────────────────── */
@@ -77,7 +79,7 @@ void vTxTask(void *pvParameters)
 {
     (void)pvParameters;
     uint8_t  packet[PACKET_LEN];
-    uint8_t  tap = 0, on_off = 0, paused = 0, triggered = 0, env_cond = ENV_UNKNOWN, temp = 0, temp_frac = 0;
+    uint8_t  tap = 0, on_off = 0, paused = 0, triggered = 0, env_cond = ENV_UNKNOWN, temp = 0, temp_frac = 0, hum = 0, hum_frac = 0;
     uint16_t light = 0, sound = 0;
 
     while (1) {
@@ -94,11 +96,13 @@ void vTxTask(void *pvParameters)
             env_cond  = gAverageSensorData.env_condition;
             temp = gAverageSensorData.temperature;
             temp_frac = gAverageSensorData.temp_frac;
+            hum = gAverageSensorData.humidity;
+            hum_frac = gAverageSensorData.hum_frac;
             if (tap) gAverageSensorData.tap_event = 0;
             xSemaphoreGive(gSensorMutex);
         }
 
-        build_packet(tap, on_off, paused, light, sound, triggered, env_cond, temp, temp_frac, packet);
+        build_packet(tap, on_off, paused, light, sound, triggered, env_cond, temp, temp_frac, hum, hum_frac, packet);
         uart2_send_blocking(packet, PACKET_LEN);
         vTaskDelay(pdMS_TO_TICKS(10));
     }

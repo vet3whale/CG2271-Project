@@ -1,4 +1,5 @@
 #include "tap.h"
+#include "buzzer.h"
 #include "shared_data.h"
 #include "fsl_debug_console.h"
 #include "FreeRTOS.h"
@@ -59,6 +60,7 @@ void vTapTask(void *pvParameters) {
             if (secondTap == pdTRUE) {
                 // Double tap: toggle on/off
                 gSensorData.on_off ^= 1;
+                gBuzzerRequest = BUZZ_SHORT;
                 // Clear paused when turning off
                 if (!gSensorData.on_off) {
                     gSensorData.paused = 0;
@@ -67,6 +69,7 @@ void vTapTask(void *pvParameters) {
                 // Single tap: pause only if on
                 if (gSensorData.on_off) {
                     gSensorData.paused ^= 1;
+                    gBuzzerRequest = BUZZ_SHORT;
                 }
             }
             gSensorData.tap_event = 1;

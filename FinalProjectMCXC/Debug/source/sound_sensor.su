@@ -3,4 +3,4 @@ C:\Users\vetri\Documents\MCUXpressoIDE_25.6.136\workspace\CG2271-Project\FinalPr
 ../source/sound_sensor.c:15:13:adc_calibrate	16	static
 ../source/sound_sensor.c:74:6:sound_sensor_init	8	static
 ../source/sound_sensor.c:104:10:sound_sensor_read	8	static
-../source/sound_sensor.c:120:6:vSoundTask	64	static
+../source/sound_sensor.c:113:6:vSoundTask	80	static

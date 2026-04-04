@@ -23,7 +23,7 @@
  * [13] checksum XOR[2..9]
  * [14] END
  */
-#define PACKET_LEN      15U 
+#define PACKET_LEN      17U 
 
 /* ── ESP32 → MCXC Temperature packet (6 bytes, NEW) ─────────────────────
  * [0] START1
@@ -34,7 +34,7 @@
  * [5] END
  */
 #define TEMP_PKT_START2             0x56U
-#define TEMP_PKT_LEN                6U
+#define TEMP_PKT_LEN                8U
 #define TEMP_PKT_CHECKSUM(ti, tf)   ((uint8_t)((uint8_t)(ti) ^ (tf)))
 
 /* ── Environment condition values (received in byte [9] of RX packet) ── */

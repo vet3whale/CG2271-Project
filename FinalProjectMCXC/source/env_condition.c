@@ -2,31 +2,52 @@
 #include "shared_data.h"
 #include "uart_packet.h"
 #include "uart_tx.h"
+#include "buzzer.h"
 #include "FreeRTOS.h"
 #include "task.h"
 #include "semphr.h"
+#include <stdbool.h>
 
-#define TEMP_PRECISION_SHIFT 8  // Scale by 256
-#define FILTER_SHIFT 4          // Smoothing factor (1/16th)
+#define FILTER_SHIFT 4   // EMA factor = 1/16
 
-void update_temp_average(int8_t new_temp_reading) {
-	// 1. Scale the new reading to match our high-precision average
-	int32_t scaled_new = (int32_t)new_temp_reading << TEMP_PRECISION_SHIFT;
+static void update_temp_average(int8_t new_temp_int, uint8_t new_temp_frac)
+{
+    static bool initialized = false;
+    static int32_t avg_temp_x10 = 0;   // temperature in tenths
 
-	// 2. Apply the EMA formula
-	// We use a temporary 32-bit variable to avoid overflow during calculation
-	static int32_t long_term_avg = 0;
+    int32_t new_temp_x10 = ((int32_t)new_temp_int * 10) + (int32_t)new_temp_frac;
 
-	// Initialize if it's the first run
-	if (long_term_avg == 0)
-		long_term_avg = scaled_new;
+    if (!initialized) {
+        avg_temp_x10 = new_temp_x10;
+        initialized = true;
+    } else {
+        avg_temp_x10 = avg_temp_x10
+                     - (avg_temp_x10 >> FILTER_SHIFT)
+                     + (new_temp_x10 >> FILTER_SHIFT);
+    }
 
-	long_term_avg = long_term_avg - (long_term_avg >> FILTER_SHIFT) + (scaled_new >> FILTER_SHIFT);
+    gAverageSensorData.temperature = (int8_t)(avg_temp_x10 / 10);
+    gAverageSensorData.temp_frac   = (uint8_t)(avg_temp_x10 % 10);
+}
 
-	// 3. Store back to your shared data
-	// Shift back down to get the whole number for your logic
-	gAverageSensorData.temperature = (int8_t)(long_term_avg >> TEMP_PRECISION_SHIFT);
-	gAverageSensorData.temp_frac = (uint8_t)(long_term_avg & 0xFF);
+static void update_humidity_average(uint8_t new_hum_int, uint8_t new_hum_frac)
+{
+    static bool initialized = false;
+    static uint32_t avg_hum_x10 = 0;   // humidity in tenths
+
+    uint32_t new_hum_x10 = ((uint32_t)new_hum_int * 10U) + (uint32_t)new_hum_frac;
+
+    if (!initialized) {
+        avg_hum_x10 = new_hum_x10;
+        initialized = true;
+    } else {
+        avg_hum_x10 = avg_hum_x10
+                    - (avg_hum_x10 >> FILTER_SHIFT)
+                    + (new_hum_x10 >> FILTER_SHIFT);
+    }
+
+    gAverageSensorData.humidity = (uint8_t)(avg_hum_x10 / 10U);
+    gAverageSensorData.hum_frac = (uint8_t)(avg_hum_x10 % 10U);
 }
 
 void vEnvTask(void *pvParameters)
@@ -39,46 +60,62 @@ void vEnvTask(void *pvParameters)
         if (xSemaphoreTake(gSensorMutex, pdMS_TO_TICKS(20)) == pdTRUE) {
             uint16_t light = gSensorData.light_raw;
             uint16_t sound = gSensorData.sound_raw;
-            int8_t   temp  = gSensorData.temperature;
 
-            gAverageSensorData.light_raw = gAverageSensorData.light_raw -
-                                              (gAverageSensorData.light_raw >> FILTER_SHIFT) +
-                                              (light >> FILTER_SHIFT);
+            int8_t   temp_int  = gSensorData.temperature;
+            uint8_t  temp_frac = gSensorData.temp_frac;
 
-			gAverageSensorData.sound_raw = gAverageSensorData.sound_raw -
-										  (gAverageSensorData.sound_raw >> FILTER_SHIFT) +
-										  (sound >> FILTER_SHIFT);
-			update_temp_average(temp);
+            uint8_t  hum_int   = gSensorData.humidity;
+            uint8_t  hum_frac  = gSensorData.hum_frac;
+
+            gAverageSensorData.light_raw =
+                gAverageSensorData.light_raw
+                - (gAverageSensorData.light_raw >> FILTER_SHIFT)
+                + (light >> FILTER_SHIFT);
+
+            gAverageSensorData.sound_raw =
+                gAverageSensorData.sound_raw
+                - (gAverageSensorData.sound_raw >> FILTER_SHIFT)
+                + (sound >> FILTER_SHIFT);
+
+            update_temp_average(temp_int, temp_frac);
+            update_humidity_average(hum_int, hum_frac);
 
             uint8_t score = 0;
 
-            // High-impact: directly disrupts focus
-            if (sound > SOUND_TOO_LOUD_THRESHOLD) score += 3;
+            // use averaged temperature for condition
+            int8_t avg_temp = gAverageSensorData.temperature;
+
+            if (soundTriggerCount30s >= NOISY_TRIGGER_COUNT_30S) score += 3;
             if (light > LIGHT_TOO_DARK_THRESHOLD) score += 2;
+            if (avg_temp > TEMP_TOO_HOT_CELSIUS)  score += 1;
+            if (avg_temp < TEMP_TOO_COLD_CELSIUS) score += 1;
 
-            // Low-impact: uncomfortable but manageable
-            if (temp > TEMP_TOO_HOT_CELSIUS)      score += 1;
-            if (temp < TEMP_TOO_COLD_CELSIUS)     score += 1;
-
-            gSensorData.env_condition = (score == 0) ? ENV_GOOD : (score <= 2) ? ENV_MODERATE : ENV_POOR;
+            gSensorData.env_condition =
+                (score == 0) ? ENV_GOOD :
+                (score <= 2) ? ENV_MODERATE :
+                               ENV_POOR;
+            if (gSensorData.env_condition == ENV_POOR) gBuzzerRequest = BUZZ_LONG;
 
             if (score == 0) g_color_blend = 0;
             else if (score <= 2) g_color_blend = 40;
             else if (score <= 3) g_color_blend = 70;
             else g_color_blend = 100;
 
-            gAverageSensorData.tap_event = gSensorData.tap_event;
-            gAverageSensorData.on_off = gSensorData.on_off;
-            gAverageSensorData.paused = gSensorData.paused;
+            gAverageSensorData.tap_event       = gSensorData.tap_event;
+            gAverageSensorData.on_off          = gSensorData.on_off;
+            gAverageSensorData.paused          = gSensorData.paused;
             gAverageSensorData.sound_triggered = gSensorData.sound_triggered;
-            gAverageSensorData.temp_frac = gSensorData.temp_frac;
-            gAverageSensorData.env_condition = gSensorData.env_condition;
-            if (gSensorData.tap_event) gSensorData.tap_event = 0;
+            gAverageSensorData.env_condition   = gSensorData.env_condition;
+
+            if (gSensorData.tap_event) {
+                gSensorData.tap_event = 0;
+            }
 
             xSemaphoreGive(gSensorMutex);
         }
 
-        if (xTxTaskHandle != NULL)
+        if (xTxTaskHandle != NULL) {
             xTaskNotifyGive(xTxTaskHandle);
+        }
     }
 }

@@ -9,7 +9,5 @@
 
 void  DHT_Init(void);
 void  vDHTTask(void *pvParameters);
-float DHT_GetTemp(void);
-float DHT_GetHumidity(void);
 
 #endif // DHT_SENSOR_H

@@ -6,7 +6,7 @@
 #include "shared_data.h"
 
 /* ── Cooldown ────────────────────────────────────────────────────────────── */
-#define GEMINI_COOLDOWN_MS   20000   // 60 seconds minimum between API calls
+#define GEMINI_COOLDOWN_MS   20000   // 20 seconds minimum between API calls
 static unsigned long sLastGeminiCall = 0;
 
 /* ── Gemini ──────────────────────────────────────────────────────────────── */
@@ -89,13 +89,13 @@ void vGeminiTask(void *pvParameters) {
     (void)pvParameters;
 
     // Ideal targets
-    const float IDEAL_TEMP_MIN = 24.0f;
-    const float IDEAL_TEMP_MAX = 27.0f;
+    const float IDEAL_TEMP_MIN = 22.0f;
+    const float IDEAL_TEMP_MAX = 31.0f;
     const float IDEAL_HUM_MIN  = 40.0f;
-    const float IDEAL_HUM_MAX  = 60.0f;
-    const uint16_t IDEAL_LIGHT_MIN = 400;
+    const float IDEAL_HUM_MAX  = 75.0f;
+    const uint16_t IDEAL_LIGHT_MIN = 0;
     const uint16_t IDEAL_LIGHT_MAX = 700;
-    const uint16_t IDEAL_SOUND_MAX = 120;
+    const uint16_t IDEAL_SOUND_MAX = 1800;
 
     while (1) {
         if (xSemaphoreTake(gGeminiSemaphore, portMAX_DELAY) == pdTRUE) {
@@ -109,8 +109,8 @@ void vGeminiTask(void *pvParameters) {
             uint32_t duration_sec = 0;
 
             if (xSemaphoreTake(gSensorMutex, pdMS_TO_TICKS(100)) == pdTRUE) {
-                temp = gSensorData.esp_temp;
-                humidity = gSensorData.esp_humidity;
+                temp = gSensorData.temp;
+                humidity = gSensorData.hum;
                 light = gSensorData.light_raw;
                 sound = gSensorData.sound_raw;
                 soundTriggered = gSensorData.sound_triggered;
@@ -135,31 +135,40 @@ void vGeminiTask(void *pvParameters) {
                 "- Average humidity: " + String(humidity, 1) + " %\n"
                 "- Average light: " + String(light) + "\n"
                 "- Average sound: " + String(sound) + "\n"
-                "- Sound triggered: " + String(soundTriggered) + "\n"
+                "- Sound trigger count in 30s: " + String(soundTriggered) + "\n"
                 "- Overall environment condition: " + envStr + "\n\n"
 
                 "Ideal study environment:\n"
                 "- Temperature: " + String(IDEAL_TEMP_MIN, 1) + " to " + String(IDEAL_TEMP_MAX, 1) + " C\n"
                 "- Humidity: " + String(IDEAL_HUM_MIN, 1) + " to " + String(IDEAL_HUM_MAX, 1) + " %\n"
-                "- Light: " + String(IDEAL_LIGHT_MIN) + " to " + String(IDEAL_LIGHT_MAX) + "\n"
+                "- Light: " + " below " + String(IDEAL_LIGHT_MAX) + "\n"
                 "- Sound: below " + String(IDEAL_SOUND_MAX) + "\n"
                 "- Repeated sound triggers are bad for focus\n\n"
 
+                "Priority of issues:\n"
+                "1. Light is the highest priority. Higher value in Light means dimmer.\n"
+                "2. Sound is the second highest priority.\n"
+                "3. Temperature should be mentioned only if it is far outside the ideal range.\n"
+                "4. Humidity can be mentioned only if it is clearly uncomfortable.\n\n"
+                "5. Dont bother about their study duration.\n"
+
                 "Instructions:\n"
-                "1. Praise the user briefly for completing the session.\n"
-                "2. Compare the measured values against the ideal ranges.\n"
-                "3. Mention only the most important 1 or 2 environment issues.\n"
-                "4. Give exactly one practical suggestion.\n"
-                "5. If conditions were generally good, say so clearly.\n"
-                "6. Keep the response under 350 characters.\n"
-                "7. Reply like a funny friend in casual Singlish. "
-                    "If the environment is bad, roast the user lightly, for example like "
-                    "'brooo u tweaking sia, why you study in the dark'. "
-                    "Be playful, dramatic, and short. "
-                    "Mention the biggest problem only, then give one practical fix. "
-                    "Keep it under 220 characters. "
-                    "Use exactly one emoji. "
-                    "No markdown, no asterisks.";
+                "1. Start with exactly: Study Session Completed! Time: " + timeStr + "\n"
+                "2. On the next line, write exactly: Average Temperature and Humidity: "
+                    + String(temp, 1) + " C, " + String(humidity, 1) + " %\n"
+                "3. On the next line, write exactly: Suggestions: \n"
+                "4. In Suggestions, praise the user briefly for finishing the session.\n"
+                "5. Compare measured values against the ideal ranges silently, but mention only the biggest 1 issue, or 2 issues only if both are important.\n"
+                "6. Always prioritize bad lighting first, then noisy environment.\n"
+                "7. If light is bad, talk about light instead of sound unless sound is much worse.\n"
+                "8. Ignore temperature unless it is very far from ideal.\n"
+                "9. Give exactly one practical suggestion.\n"
+                "10. If conditions were generally good, say so clearly.\n"
+                "11. Keep the Suggestions text short, friendly, slightly Singlish, and natural. Not too corny.\n"
+                "12. If the environment is bad, you may lightly roast the user in a playful way, but keep it mild.\n"
+                "13. Use exactly one emoji total.\n"
+                "14. No markdown, no bullet points, no asterisks.\n"
+                "15. Keep the whole reply concise.";
 
             postGemini(prompt);
         }

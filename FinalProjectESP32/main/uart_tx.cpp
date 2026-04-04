@@ -32,24 +32,20 @@ void UART_TX_SendCmd(uint8_t cmd)
 }
 
 /* ── Temperature packet (6 bytes) ───────────────────────────────────────── */
-void UART_TX_SendTemp(int8_t temp_int, uint8_t temp_frac)
-{
+void UART_TX_SendTemp(int8_t temp_int, uint8_t temp_frac, int8_t hum_int, uint8_t hum_frac) {
     uint8_t pkt[TEMP_PKT_LEN] = {
         PACKET_START1,
-        TEMP_PKT_START2,                        /* 0x56 — distinguishes from LED */
+        TEMP_PKT_START2,
         (uint8_t)temp_int,
         temp_frac,
-        TEMP_PKT_CHECKSUM(temp_int, temp_frac),
+        (uint8_t) hum_int,
+        hum_frac,
+        TEMP_PKT_CHECKSUM(temp_int, temp_frac)^TEMP_PKT_CHECKSUM(hum_int, hum_frac),
         PACKET_END
     };
 
     int written = uart_write_bytes(MCXC_UART_PORT, (const char *)pkt, TEMP_PKT_LEN);
-    if (written == TEMP_PKT_LEN) {
-        // Serial.print("[UART_TX] Sent temp: ");
-        // Serial.print(temp_int);
-        // Serial.print(".");
-        // Serial.println(temp_frac);
-    } else {
+    if (written != TEMP_PKT_LEN) 
         Serial.println("[UART_TX] Warning: temp packet write incomplete");
-    }
+    
 }
