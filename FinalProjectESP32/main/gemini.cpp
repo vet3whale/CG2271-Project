@@ -4,6 +4,7 @@
 #include "passwords.h"
 #include "uart_packet.h"
 #include "shared_data.h"
+#include "telegram_tx.h"   /* Telegram_GetPersonality() */
 
 /* ── Cooldown ────────────────────────────────────────────────────────────── */
 #define GEMINI_COOLDOWN_MS   20000   // 20 seconds minimum between API calls
@@ -23,18 +24,12 @@ String postGemini(const String &prompt) {
     sLastGeminiCall = now;
 
     String response = "";
-    
+
     ESP32_AI_Connect aiClient("gemini", GEMINI_KEY, GEMINI_MODEL);
     if (xSemaphoreTake(gNetworkMutex, pdMS_TO_TICKS(5000)) == pdTRUE) {
         aiClient.setChatMaxTokens(300);
         aiClient.setChatTemperature(0.7);
-        aiClient.setChatSystemRole(
-            "You are a funny study buddy. "
-            "You reply in casual Singlish-English, playful and teasing, like a close friend roasting the user a bit. "
-            "Be dramatic and funny, but still helpful. "
-            "Do not be vulgar, hateful, or overly harsh. "
-            "Always include one practical suggestion."
-        );
+        aiClient.setChatSystemRole(Telegram_GetPersonality().c_str());  /* ← changed */
         response = aiClient.chat(prompt);
         xSemaphoreGive(gNetworkMutex);
     } else {
@@ -60,14 +55,13 @@ String postGemini(const String &prompt) {
         strncpy(msgBuffer, response.c_str(), GEMINI_RESPONSE_MAX_LEN - 1);
         msgBuffer[GEMINI_RESPONSE_MAX_LEN - 1] = '\0';
 
-        // Send the buffer to the queue (do not wait if full)
         if (xQueueSend(gTelegramQueue, &msgBuffer, 0) != pdPASS) {
             Serial.println("[Gemini] Queue full, message dropped");
         } else {
             Serial.println("[Gemini] Message queued for Telegram");
         }
     }
-    
+
     return response;
 }
 
