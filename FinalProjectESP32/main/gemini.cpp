@@ -120,7 +120,6 @@ void vGeminiTask(void *pvParameters) {
             String envStr = String(geminiEnvConditionStr(envCondition));
 
             String prompt =
-                "You are a study environment assistant. "
                 "A study session has just ended.\n\n"
 
                 "Measured session data:\n"
@@ -151,18 +150,17 @@ void vGeminiTask(void *pvParameters) {
                 "2. On the next line, write exactly: Average Temperature and Humidity: "
                     + String(temp, 1) + " C, " + String(humidity, 1) + " %\n"
                 "3. On the next line, write exactly: Suggestions: \n"
-                "4. In Suggestions, praise the user briefly for finishing the session.\n"
+                "4. In Suggestions, acknowledge the user for completing the session.\n"
                 "5. Compare measured values against the ideal ranges silently, but mention only the biggest 1 issue, or 2 issues only if both are important.\n"
                 "6. Always prioritize bad lighting first, then noisy environment.\n"
                 "7. If light is bad, talk about light instead of sound unless sound is much worse.\n"
                 "8. Ignore temperature unless it is very far from ideal.\n"
                 "9. Give exactly one practical suggestion.\n"
                 "10. If conditions were generally good, say so clearly.\n"
-                "11. Keep the Suggestions text short, friendly, slightly Singlish, and natural. Not too corny.\n"
-                "12. If the environment is bad, you may lightly roast the user in a playful way, but keep it mild.\n"
-                "13. Use exactly one emoji total.\n"
-                "14. No markdown, no bullet points, no asterisks.\n"
-                "15. Keep the whole reply concise.";
+                "11. Deliver the Suggestions text in the tone and personality described in your system role — do not default to any particular style.\n"
+                "12. Use exactly one emoji total.\n"
+                "13. No markdown, no bullet points, no asterisks.\n"
+                "14. Keep the whole reply concise.";
 
             postGemini(prompt);
         }
