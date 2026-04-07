@@ -26,7 +26,7 @@ String postGemini(const String &prompt) {
     String response = "";
 
     ESP32_AI_Connect aiClient("gemini", GEMINI_KEY, GEMINI_MODEL);
-    if (xSemaphoreTake(gNetworkMutex, pdMS_TO_TICKS(5000)) == pdTRUE) {
+    if (xSemaphoreTake(gNetworkMutex, pdMS_TO_TICKS(15000)) == pdTRUE) {
         aiClient.setChatMaxTokens(300);
         aiClient.setChatTemperature(0.7);
         aiClient.setChatSystemRole(Telegram_GetPersonality().c_str());  /* ← changed */

@@ -49,6 +49,7 @@ static void sendKeyboard(const String &chat, const String &text, const String &k
 static void checkForCommands() {
     if (xSemaphoreTake(gNetworkMutex, pdMS_TO_TICKS(1000)) != pdTRUE) return;
     client.setInsecure();
+    client.setTimeout(3);   // 3-second HTTP timeout — caps how long the mutex is held
     int numNew = bot.getUpdates(bot.last_message_received + 1);
     xSemaphoreGive(gNetworkMutex);
     for (int i = 0; i < numNew; i++) {
