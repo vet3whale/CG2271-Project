@@ -11,6 +11,7 @@
 #include "uart_tx.h"
 #include "gemini.h"
 #include "telegram_tx.h"
+#include "oled_display.h"
 
 SensorData_t      gSensorData  = {0};
 SemaphoreHandle_t gSensorMutex = NULL;
@@ -44,9 +45,11 @@ void setup() {
     DHT_Init();
     UART_RX_Init();
     UART_TX_Init();
+    OLED_Init();
 
     WiFi_Connect();
 
+    xTaskCreate(vOLEDTask,     "OLED",     OLED_TASK_STACK_SIZE, NULL, OLED_TASK_PRIORITY, NULL);
     xTaskCreate(vTelegramTask, "Telegram", 6144, NULL, 3, NULL);
     xTaskCreate(vDHTTask,      "DHT",      2048, NULL, 2, NULL); 
     xTaskCreate(vUartRxTask,   "UartRX",   2048, NULL, 4, NULL);
