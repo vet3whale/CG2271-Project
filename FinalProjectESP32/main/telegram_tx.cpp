@@ -33,7 +33,11 @@ String Telegram_GetPersonality() {
 static void checkForCommands() {
     int numNew = bot.getUpdates(bot.last_message_received + 1);
     for (int i = 0; i < numNew; i++) {
-        String text = bot.messages[i].text;
+        // Inline keyboard buttons arrive as callback queries — use callback_query_data.
+        // Regular typed commands arrive as plain text messages — use text.
+        String text = bot.messages[i].callback_query_data.length() > 0
+                      ? bot.messages[i].callback_query_data
+                      : bot.messages[i].text;
         String chat = bot.messages[i].chat_id;
 
         if (text == "/start" || text == "/personality") {
@@ -104,8 +108,9 @@ void vTelegramTask(void *pvParameters) {
         // Poll for personality commands
         checkForCommands();
 
-        // This will wait (block) indefinitely until a message is added to the queue
-        if (xQueueReceive(gTelegramQueue, &rxBuffer, portMAX_DELAY) == pdPASS) {
+        // Wait up to 3 seconds for a Gemini message, then loop back to poll commands.
+        // Using portMAX_DELAY here would starve checkForCommands() when the queue is idle.
+        if (xQueueReceive(gTelegramQueue, &rxBuffer, pdMS_TO_TICKS(3000)) == pdPASS) {
             Serial.println("[Telegram] New message dequeued");
             unsigned long now = millis();
 
