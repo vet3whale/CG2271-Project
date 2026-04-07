@@ -91,7 +91,7 @@ static void showIdle() {
 
 /* ── Init ────────────────────────────────────────────────────────────────── */
 void OLED_Init() {
-    Wire.begin(8, 9);  // SDA=GPIO8, SCL=GPIO9
+    Wire.begin(6, 7);  // SDA=GPIO8, SCL=GPIO9
 
     if (!display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDRESS)) {
         Serial.println("[OLED] Failed to initialise — check wiring");
