@@ -41,7 +41,7 @@
  * See http://www.freertos.org/a00110.html.
  *----------------------------------------------------------*/
 
-#define configUSE_PREEMPTION                    1
+#define configUSE_PREEMPTION                    1 // preemption enabled
 #define configUSE_TICKLESS_IDLE                 0
 #define configCPU_CLOCK_HZ                      (SystemCoreClock)
 #define configTICK_RATE_HZ                      ((TickType_t)200)
@@ -57,7 +57,7 @@
 #define configUSE_ALTERNATIVE_API               0 /* Deprecated! */
 #define configQUEUE_REGISTRY_SIZE               8
 #define configUSE_QUEUE_SETS                    0
-#define configUSE_TIME_SLICING                  1
+#define configUSE_TIME_SLICING                  1 // timeslicing enabled
 #define configUSE_NEWLIB_REENTRANT              0
 #define configENABLE_BACKWARD_COMPATIBILITY     1
 #define configNUM_THREAD_LOCAL_STORAGE_POINTERS 5
