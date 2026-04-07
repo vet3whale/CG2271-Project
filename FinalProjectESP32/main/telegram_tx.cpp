@@ -34,14 +34,28 @@ String Telegram_GetPersonality() {
     return sPersonality;
 }
 
+static void sendCmd(const String &chat, const String &msg) {
+    if (xSemaphoreTake(gNetworkMutex, pdMS_TO_TICKS(3000)) != pdTRUE) return;
+    bot.sendMessage(chat, msg, "");
+    xSemaphoreGive(gNetworkMutex);
+}
+
+static void sendKeyboard(const String &chat, const String &text, const String &kb) {
+    if (xSemaphoreTake(gNetworkMutex, pdMS_TO_TICKS(3000)) != pdTRUE) return;
+    bot.sendMessageWithInlineKeyboard(chat, text, "", kb);
+    xSemaphoreGive(gNetworkMutex);
+}
+
 static void checkForCommands() {
+    if (xSemaphoreTake(gNetworkMutex, pdMS_TO_TICKS(1000)) != pdTRUE) return;
+    client.setInsecure();
     int numNew = bot.getUpdates(bot.last_message_received + 1);
+    xSemaphoreGive(gNetworkMutex);
     for (int i = 0; i < numNew; i++) {
-        // Inline keyboard buttons arrive as callback queries — use callback_query_data.
-        // Regular typed commands arrive as plain text messages — use text.
-        String text = bot.messages[i].callback_query_data.length() > 0
-                      ? bot.messages[i].callback_query_data
-                      : bot.messages[i].text;
+        // Both inline keyboard buttons (callback_query) and typed commands store
+        // their value in .text — the library maps callback_data to .text for callbacks.
+        // Use .type to distinguish if needed, but .text works for both cases here.
+        String text = bot.messages[i].text;
         String chat = bot.messages[i].chat_id;
 
         if (text == "/start" || text == "/personality") {
@@ -52,10 +66,7 @@ static void checkForCommands() {
                 "[{\"text\":\"💼 Formal\",\"callback_data\":\"/formal\"},"
                 "{\"text\":\"🧘 Zen\",\"callback_data\":\"/zen\"}]]";
 
-            bot.sendMessageWithInlineKeyboard(chat,
-                "Choose your study coach personality:",
-                "",
-                keyboardJson);
+            sendKeyboard(chat, "Choose your study coach personality:", keyboardJson);
 
         } else if (text == "/funny") {
             sPersonality =
@@ -67,7 +78,7 @@ static void checkForCommands() {
                 "Never be vulgar, hateful, or overly harsh. "
                 "Keep the tone light, fun, and encouraging overall.";
             sPersonalitySet = true;
-            bot.sendMessage(chat, "😂 Wah, funny Singlish mode activated lah! Let's go sia!", "");
+            sendCmd(chat, "😂 Wah, funny Singlish mode activated lah! Let's go sia!");
 
         } else if (text == "/strict") {
             sPersonality =
@@ -80,7 +91,7 @@ static void checkForCommands() {
                 "Always end with exactly one firm, actionable directive. "
                 "Do not praise unless it is genuinely deserved.";
             sPersonalitySet = true;
-            bot.sendMessage(chat, "😤 Strict mode activated. No excuses. Get to work.", "");
+            sendCmd(chat, "😤 Strict mode activated. No excuses. Get to work.");
 
         } else if (text == "/formal") {
             sPersonality =
@@ -92,7 +103,7 @@ static void checkForCommands() {
                 "Conclude with exactly one well-reasoned, actionable recommendation phrased as professional advice. "
                 "Maintain a respectful, objective tone throughout.";
             sPersonalitySet = true;
-            bot.sendMessage(chat, "💼 Formal mode activated. Your session debrief will be delivered professionally.", "");
+            sendCmd(chat, "💼 Formal mode activated. Your session debrief will be delivered professionally.");
 
         } else if (text == "/zen") {
             sPersonality =
@@ -104,7 +115,7 @@ static void checkForCommands() {
                 "Gently surface the one most important environmental insight, and offer it as a kind suggestion rather than a correction. "
                 "End with exactly one calming, practical recommendation that nurtures both focus and wellbeing.";
             sPersonalitySet = true;
-            bot.sendMessage(chat, "🧘 Zen mode activated. Breathe. You are doing well.", "");
+            sendCmd(chat, "🧘 Zen mode activated. Breathe. You are doing well.");
         }
     }
 }
