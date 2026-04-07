@@ -59,6 +59,17 @@ static void checkForCommands() {
         String text = bot.messages[i].text;
         String chat = bot.messages[i].chat_id;
 
+        // ── FIX 1: Handle callback queries from inline keyboard buttons ──────
+        // Inline button taps come in as callback_query type, not message text.
+        // The actual payload is in bot.messages[i].text when type == "callback_query"
+        // but we must also acknowledge the query to stop the "loading..." spinner.
+        bool isCallback = (bot.messages[i].type == F("callback_query"));
+        if (isCallback) {
+            // Acknowledge immediately — this clears the "loading..." on the button
+            bot.answerCallbackQuery(bot.messages[i].query_id, "");
+        }
+
+        // Now handle the command text (works for both typed commands and button taps)
         if (text == "/start" || text == "/personality") {
             sPersonalitySet = false;   // re-open selection — resume fast polling
             String keyboardJson =
@@ -94,7 +105,6 @@ static void checkForCommands() {
             sPersonalitySet = true;
             sendCmd(chat, "😤 Strict mode activated. No excuses. Get to work.");
 
-        } else if (text == "/formal") {
             sPersonality =
                 "You are a professional academic advisor providing a structured post-session debrief. "
                 "Your language is formal, composed, and precise — no slang, contractions, or casual expressions. "
@@ -121,7 +131,7 @@ static void checkForCommands() {
     }
 }
 
-/* ── Task — unchanged except checkForCommands() added at top of loop ─────── */
+// ── FIX 2: Don't block forever on the queue — poll commands regularly ─────
 void vTelegramTask(void *pvParameters) {
     char rxBuffer[GEMINI_RESPONSE_MAX_LEN];
 
@@ -147,7 +157,6 @@ void vTelegramTask(void *pvParameters) {
             Serial.println("[Telegram] New message dequeued");
             unsigned long now = millis();
 
-            // Take network mutex to send
             if (xSemaphoreTake(gNetworkMutex, pdMS_TO_TICKS(10000)) == pdTRUE) {
                 client.setInsecure();
                 if (sLastTelegramSend != 0 && (now - sLastTelegramSend) < TELEGRAM_COOLDOWN_MS) {
@@ -170,7 +179,6 @@ void vTelegramTask(void *pvParameters) {
                 xSemaphoreGive(gNetworkMutex);
             }
 
-            // Short rest to let the WiFi hardware stabilize
             vTaskDelay(pdMS_TO_TICKS(500));
         }
     }
