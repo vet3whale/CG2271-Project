@@ -37,7 +37,6 @@ void vDHTTask(void *pvParameters)
             vTaskDelay(pdMS_TO_TICKS(2000));
             continue;
         }
-
         if (xSemaphoreTake(gSensorMutex, pdMS_TO_TICKS(100)) == pdTRUE) { 
             gSensorData.esp_temp = temperature;
             gSensorData.esp_humidity = humidity;
