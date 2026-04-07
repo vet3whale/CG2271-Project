@@ -38,6 +38,12 @@ void vDHTTask(void *pvParameters)
             continue;
         }
 
+        if (xSemaphoreTake(gSensorMutex, pdMS_TO_TICKS(100)) == pdTRUE) { 
+            gSensorData.esp_temp = temperature;
+            gSensorData.esp_humidity = humidity;
+            xSemaphoreGive(gSensorMutex)
+        }
+
         /* Send temp to MCXC — this triggers vRXTask → gTempReadySem → vEnvTask */
         int8_t  ti = (int8_t)temperature;
         uint8_t tf = (uint8_t)((temperature - (float)ti) * 10.0f);
