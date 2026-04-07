@@ -12,10 +12,13 @@
 static WiFiClientSecure client;
 static UniversalTelegramBot bot(BOT_TOKEN, client);
 
-#define TELEGRAM_COOLDOWN_MS 15000
+#define TELEGRAM_COOLDOWN_MS  15000
+#define CMD_POLL_FAST_MS       3000   // poll interval before a tone is chosen
+#define CMD_POLL_SLOW_MS      30000   // poll interval once tone is set
 static unsigned long sLastTelegramSend = 0;
 
 /* ── Personality ─────────────────────────────────────────────────────────── */
+static volatile bool sPersonalitySet = false;   // false until user picks a tone
 static String sPersonality =
     // FUNNY (default)
     "You are a funny, lovable study buddy who speaks in casual Singlish-English. "
@@ -41,6 +44,7 @@ static void checkForCommands() {
         String chat = bot.messages[i].chat_id;
 
         if (text == "/start" || text == "/personality") {
+            sPersonalitySet = false;   // re-open selection — resume fast polling
             String keyboardJson =
                 "[[{\"text\":\"😂 Funny\",\"callback_data\":\"/funny\"},"
                 "{\"text\":\"😤 Strict\",\"callback_data\":\"/strict\"}],"
@@ -61,6 +65,7 @@ static void checkForCommands() {
                 "You are still genuinely helpful — always include exactly one clear, practical suggestion. "
                 "Never be vulgar, hateful, or overly harsh. "
                 "Keep the tone light, fun, and encouraging overall.";
+            sPersonalitySet = true;
             bot.sendMessage(chat, "😂 Wah, funny Singlish mode activated lah! Let's go sia!", "");
 
         } else if (text == "/strict") {
@@ -73,6 +78,7 @@ static void checkForCommands() {
                 "You call out poor study conditions as unacceptable and demand corrective action. "
                 "Always end with exactly one firm, actionable directive. "
                 "Do not praise unless it is genuinely deserved.";
+            sPersonalitySet = true;
             bot.sendMessage(chat, "😤 Strict mode activated. No excuses. Get to work.", "");
 
         } else if (text == "/formal") {
@@ -84,6 +90,7 @@ static void checkForCommands() {
                 "Highlight the most significant environmental factor affecting study quality. "
                 "Conclude with exactly one well-reasoned, actionable recommendation phrased as professional advice. "
                 "Maintain a respectful, objective tone throughout.";
+            sPersonalitySet = true;
             bot.sendMessage(chat, "💼 Formal mode activated. Your session debrief will be delivered professionally.", "");
 
         } else if (text == "/zen") {
@@ -95,6 +102,7 @@ static void checkForCommands() {
                 "Celebrate the act of showing up and studying as meaningful in itself. "
                 "Gently surface the one most important environmental insight, and offer it as a kind suggestion rather than a correction. "
                 "End with exactly one calming, practical recommendation that nurtures both focus and wellbeing.";
+            sPersonalitySet = true;
             bot.sendMessage(chat, "🧘 Zen mode activated. Breathe. You are doing well.", "");
         }
     }
@@ -105,12 +113,14 @@ void vTelegramTask(void *pvParameters) {
     char rxBuffer[GEMINI_RESPONSE_MAX_LEN];
 
     while (1) {
-        // Poll for personality commands
+        // Poll fast (3 s) while waiting for tone selection, slow (30 s) once set.
+        // Resets to fast whenever the user opens /personality again.
         checkForCommands();
+        TickType_t pollInterval = sPersonalitySet
+                                  ? pdMS_TO_TICKS(CMD_POLL_SLOW_MS)
+                                  : pdMS_TO_TICKS(CMD_POLL_FAST_MS);
 
-        // Wait up to 3 seconds for a Gemini message, then loop back to poll commands.
-        // Using portMAX_DELAY here would starve checkForCommands() when the queue is idle.
-        if (xQueueReceive(gTelegramQueue, &rxBuffer, pdMS_TO_TICKS(3000)) == pdPASS) {
+        if (xQueueReceive(gTelegramQueue, &rxBuffer, pollInterval) == pdPASS) {
             Serial.println("[Telegram] New message dequeued");
             unsigned long now = millis();
 
@@ -123,10 +133,15 @@ void vTelegramTask(void *pvParameters) {
                     continue;
                 }
 
+                // Notify user that the report is on its way
+                bot.sendMessage(CHAT_ID, "⏳ Generating your session report...", "");
+
                 if (!(sLastTelegramSend && (now - sLastTelegramSend) < TELEGRAM_COOLDOWN_MS) && bot.sendMessage(CHAT_ID, String(rxBuffer), "")) {
                     Serial.println("[Telegram] Send success");
+                    bot.sendMessage(CHAT_ID, "✅ Report delivered!", "");
                 } else {
                     Serial.println("[Telegram] Send failed");
+                    bot.sendMessage(CHAT_ID, "❌ Failed to deliver report. Please check the device.", "");
                 }
                 sLastTelegramSend = millis();
                 xSemaphoreGive(gNetworkMutex);
