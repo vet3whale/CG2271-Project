@@ -12,10 +12,13 @@
 static WiFiClientSecure client;
 static UniversalTelegramBot bot(BOT_TOKEN, client);
 
-#define TELEGRAM_COOLDOWN_MS 15000
+#define TELEGRAM_COOLDOWN_MS  15000
+#define CMD_POLL_FAST_MS       3000   // poll interval before a tone is chosen
+#define CMD_POLL_SLOW_MS      30000   // poll interval once tone is set
 static unsigned long sLastTelegramSend = 0;
 
 /* ── Personality ─────────────────────────────────────────────────────────── */
+static volatile bool sPersonalitySet = false;   // false until user picks a tone
 static String sPersonality =
     // FUNNY (default)
     "You are a funny, lovable study buddy who speaks in casual Singlish-English. "
@@ -33,7 +36,11 @@ String Telegram_GetPersonality() {
 static void checkForCommands() {
     int numNew = bot.getUpdates(bot.last_message_received + 1);
     for (int i = 0; i < numNew; i++) {
-        String text = bot.messages[i].text;
+        // Inline keyboard buttons arrive as callback queries — use callback_query_data.
+        // Regular typed commands arrive as plain text messages — use text.
+        String text = bot.messages[i].callback_query_data.length() > 0
+                      ? bot.messages[i].callback_query_data
+                      : bot.messages[i].text;
         String chat = bot.messages[i].chat_id;
 
         // ── FIX 1: Handle callback queries from inline keyboard buttons ──────
@@ -48,6 +55,7 @@ static void checkForCommands() {
 
         // Now handle the command text (works for both typed commands and button taps)
         if (text == "/start" || text == "/personality") {
+            sPersonalitySet = false;   // re-open selection — resume fast polling
             String keyboardJson =
                 "[[{\"text\":\"😂 Funny\",\"callback_data\":\"/funny\"},"
                 "{\"text\":\"😤 Strict\",\"callback_data\":\"/strict\"}],"
@@ -67,6 +75,7 @@ static void checkForCommands() {
                 "You are still genuinely helpful — always include exactly one clear, practical suggestion. "
                 "Never be vulgar, hateful, or overly harsh. "
                 "Keep the tone light, fun, and encouraging overall.";
+            sPersonalitySet = true;
             bot.sendMessage(chat, "😂 Wah, funny Singlish mode activated lah! Let's go sia!", "");
 
         } else if (text == "/strict") {
@@ -79,6 +88,7 @@ static void checkForCommands() {
                 "You call out poor study conditions as unacceptable and demand corrective action. "
                 "Always end with exactly one firm, actionable directive. "
                 "Do not praise unless it is genuinely deserved.";
+            sPersonalitySet = true;
             bot.sendMessage(chat, "😤 Strict mode activated. No excuses. Get to work.", "");
 
             sPersonality =
@@ -89,6 +99,7 @@ static void checkForCommands() {
                 "Highlight the most significant environmental factor affecting study quality. "
                 "Conclude with exactly one well-reasoned, actionable recommendation phrased as professional advice. "
                 "Maintain a respectful, objective tone throughout.";
+            sPersonalitySet = true;
             bot.sendMessage(chat, "💼 Formal mode activated. Your session debrief will be delivered professionally.", "");
 
         } else if (text == "/zen") {
@@ -100,6 +111,7 @@ static void checkForCommands() {
                 "Celebrate the act of showing up and studying as meaningful in itself. "
                 "Gently surface the one most important environmental insight, and offer it as a kind suggestion rather than a correction. "
                 "End with exactly one calming, practical recommendation that nurtures both focus and wellbeing.";
+            sPersonalitySet = true;
             bot.sendMessage(chat, "🧘 Zen mode activated. Breathe. You are doing well.", "");
         }
     }
@@ -110,8 +122,12 @@ void vTelegramTask(void *pvParameters) {
     char rxBuffer[GEMINI_RESPONSE_MAX_LEN];
 
     while (1) {
-        // Poll for personality commands every loop iteration
+        // Poll fast (3 s) while waiting for tone selection, slow (30 s) once set.
+        // Resets to fast whenever the user opens /personality again.
         checkForCommands();
+        TickType_t pollInterval = sPersonalitySet
+                                  ? pdMS_TO_TICKS(CMD_POLL_SLOW_MS)
+                                  : pdMS_TO_TICKS(CMD_POLL_FAST_MS);
 
         // ── FIX: Use a timeout instead of portMAX_DELAY so we keep polling ──
         // Wait up to 5 seconds for a queued report; if nothing arrives, loop
@@ -129,10 +145,15 @@ void vTelegramTask(void *pvParameters) {
                     continue;
                 }
 
-                if (bot.sendMessage(CHAT_ID, String(rxBuffer), "")) {
+                // Notify user that the report is on its way
+                bot.sendMessage(CHAT_ID, "⏳ Generating your session report...", "");
+
+                if (!(sLastTelegramSend && (now - sLastTelegramSend) < TELEGRAM_COOLDOWN_MS) && bot.sendMessage(CHAT_ID, String(rxBuffer), "")) {
                     Serial.println("[Telegram] Send success");
+                    bot.sendMessage(CHAT_ID, "✅ Report delivered!", "");
                 } else {
                     Serial.println("[Telegram] Send failed");
+                    bot.sendMessage(CHAT_ID, "❌ Failed to deliver report. Please check the device.", "");
                 }
                 sLastTelegramSend = millis();
                 xSemaphoreGive(gNetworkMutex);
