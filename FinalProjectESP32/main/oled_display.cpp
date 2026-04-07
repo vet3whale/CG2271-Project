@@ -1,4 +1,8 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+// oled_display.cpp
+>>>>>>> 42cdd8fb460afe9c2fd304622b9f6caef5709db9
 =======
 // oled_display.cpp
 >>>>>>> 42cdd8fb460afe9c2fd304622b9f6caef5709db9
@@ -12,8 +16,13 @@
 #define SCREEN_WIDTH  128
 #define SCREEN_HEIGHT  64
 <<<<<<< HEAD
+<<<<<<< HEAD
 #define OLED_RESET     -1    // no reset pin
 #define OLED_ADDRESS  0x3C   // most SSD1306 modules use 0x3C
+=======
+#define OLED_RESET     -1
+#define OLED_ADDRESS  0x3C
+>>>>>>> 42cdd8fb460afe9c2fd304622b9f6caef5709db9
 =======
 #define OLED_RESET     -1
 #define OLED_ADDRESS  0x3C
@@ -28,7 +37,10 @@ static unsigned long sTotalPaused  = 0;
 static bool          sWasRunning   = false;
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
+=======
+>>>>>>> 42cdd8fb460afe9c2fd304622b9f6caef5709db9
 /* ── Session stats accumulators ──────────────────────────────────────────── */
 static float    sTempSum      = 0.0f;
 static float    sHumSum       = 0.0f;
@@ -37,6 +49,9 @@ static float    sAvgTemp      = 0.0f;
 static float    sAvgHum       = 0.0f;
 static unsigned long sFinalElapsed = 0;  // saved when session ends
 
+<<<<<<< HEAD
+>>>>>>> 42cdd8fb460afe9c2fd304622b9f6caef5709db9
+=======
 >>>>>>> 42cdd8fb460afe9c2fd304622b9f6caef5709db9
 static String formatTime(unsigned long seconds) {
     unsigned long h = seconds / 3600;
@@ -51,13 +66,17 @@ static String formatTime(unsigned long seconds) {
 static void showRunning(unsigned long elapsed) {
     display.clearDisplay();
 <<<<<<< HEAD
+<<<<<<< HEAD
 
+=======
+>>>>>>> 42cdd8fb460afe9c2fd304622b9f6caef5709db9
 =======
 >>>>>>> 42cdd8fb460afe9c2fd304622b9f6caef5709db9
     display.setTextSize(1);
     display.setTextColor(SSD1306_WHITE);
     display.setCursor(20, 0);
     display.println("STUDY SESSION");
+<<<<<<< HEAD
 <<<<<<< HEAD
 
     display.drawLine(0, 10, 127, 10, SSD1306_WHITE);
@@ -72,6 +91,8 @@ static void showRunning(unsigned long elapsed) {
     display.println("RUNNING");
 
 =======
+=======
+>>>>>>> 42cdd8fb460afe9c2fd304622b9f6caef5709db9
     display.drawLine(0, 10, 127, 10, SSD1306_WHITE);
     display.setTextSize(2);
     display.setCursor(10, 18);
@@ -86,6 +107,9 @@ static void showRunning(unsigned long elapsed) {
 
     display.setCursor(85, 52);
     display.println("RUN");
+<<<<<<< HEAD
+>>>>>>> 42cdd8fb460afe9c2fd304622b9f6caef5709db9
+=======
 >>>>>>> 42cdd8fb460afe9c2fd304622b9f6caef5709db9
     display.display();
 }
@@ -93,13 +117,17 @@ static void showRunning(unsigned long elapsed) {
 static void showPaused(unsigned long elapsed) {
     display.clearDisplay();
 <<<<<<< HEAD
+<<<<<<< HEAD
 
+=======
+>>>>>>> 42cdd8fb460afe9c2fd304622b9f6caef5709db9
 =======
 >>>>>>> 42cdd8fb460afe9c2fd304622b9f6caef5709db9
     display.setTextSize(1);
     display.setTextColor(SSD1306_WHITE);
     display.setCursor(20, 0);
     display.println("STUDY SESSION");
+<<<<<<< HEAD
 <<<<<<< HEAD
 
     display.drawLine(0, 10, 127, 10, SSD1306_WHITE);
@@ -115,6 +143,8 @@ static void showPaused(unsigned long elapsed) {
     display.print(formatTime(elapsed));
 
 =======
+=======
+>>>>>>> 42cdd8fb460afe9c2fd304622b9f6caef5709db9
     display.drawLine(0, 10, 127, 10, SSD1306_WHITE);
     display.fillRect(44, 14, 10, 20, SSD1306_WHITE);
     display.fillRect(60, 14, 10, 20, SSD1306_WHITE);
@@ -151,6 +181,9 @@ static void showSummary() {
     display.setCursor(0, 54);
     display.printf("Samples:  %lu", sSampleCount);
 
+<<<<<<< HEAD
+>>>>>>> 42cdd8fb460afe9c2fd304622b9f6caef5709db9
+=======
 >>>>>>> 42cdd8fb460afe9c2fd304622b9f6caef5709db9
     display.display();
 }
@@ -158,13 +191,17 @@ static void showSummary() {
 static void showIdle() {
     display.clearDisplay();
 <<<<<<< HEAD
+<<<<<<< HEAD
 
+=======
+>>>>>>> 42cdd8fb460afe9c2fd304622b9f6caef5709db9
 =======
 >>>>>>> 42cdd8fb460afe9c2fd304622b9f6caef5709db9
     display.setTextSize(1);
     display.setTextColor(SSD1306_WHITE);
     display.setCursor(15, 10);
     display.println("No active session");
+<<<<<<< HEAD
 <<<<<<< HEAD
 
     display.setCursor(22, 30);
@@ -183,6 +220,8 @@ void OLED_Init() {
         Serial.println("[OLED] Failed to initialise — check wiring");
         return;
 =======
+=======
+>>>>>>> 42cdd8fb460afe9c2fd304622b9f6caef5709db9
     display.setCursor(22, 30);
     display.println("Tap to start!");
     display.drawRect(0, 0, 127, 63, SSD1306_WHITE);
@@ -223,6 +262,9 @@ void OLED_Init() {
         }
     } else {
         Serial.println("[OLED] Initialised at 0x3C");
+<<<<<<< HEAD
+>>>>>>> 42cdd8fb460afe9c2fd304622b9f6caef5709db9
+=======
 >>>>>>> 42cdd8fb460afe9c2fd304622b9f6caef5709db9
     }
 
@@ -233,8 +275,12 @@ void OLED_Init() {
     display.println("Study Coach");
     display.display();
 <<<<<<< HEAD
+<<<<<<< HEAD
 
     Serial.println("[OLED] Initialised");
+=======
+    Serial.println("[OLED] Splash screen displayed");
+>>>>>>> 42cdd8fb460afe9c2fd304622b9f6caef5709db9
 =======
     Serial.println("[OLED] Splash screen displayed");
 >>>>>>> 42cdd8fb460afe9c2fd304622b9f6caef5709db9
@@ -248,6 +294,7 @@ void vOLEDTask(void *pvParameters) {
     uint8_t onOff  = 0;
     uint8_t paused = 0;
 <<<<<<< HEAD
+<<<<<<< HEAD
 
     while (1) {
         // Read shared state under mutex
@@ -256,6 +303,8 @@ void vOLEDTask(void *pvParameters) {
             paused = gSensorData.paused;
             xSemaphoreGive(gSensorMutex);
 =======
+=======
+>>>>>>> 42cdd8fb460afe9c2fd304622b9f6caef5709db9
     float   temp   = 0.0f;
     float   hum    = 0.0f;
 
@@ -273,12 +322,16 @@ void vOLEDTask(void *pvParameters) {
             xSemaphoreGive(gSensorMutex);
         } else {
             Serial.println("[OLED] Warning: could not take sensor mutex");
+<<<<<<< HEAD
+>>>>>>> 42cdd8fb460afe9c2fd304622b9f6caef5709db9
+=======
 >>>>>>> 42cdd8fb460afe9c2fd304622b9f6caef5709db9
         }
 
         unsigned long now = millis();
 
         if (onOff == 1 && paused == 0) {
+<<<<<<< HEAD
 <<<<<<< HEAD
             // Session is RUNNING
             if (!sWasRunning) {
@@ -293,6 +346,8 @@ void vOLEDTask(void *pvParameters) {
                 sWasRunning = true;
             }
 =======
+=======
+>>>>>>> 42cdd8fb460afe9c2fd304622b9f6caef5709db9
             // ── RUNNING ──
             summaryTicksLeft = 0;
 
@@ -325,11 +380,15 @@ void vOLEDTask(void *pvParameters) {
                 sAvgHum  = sHumSum  / sSampleCount;
             }
 
+<<<<<<< HEAD
+>>>>>>> 42cdd8fb460afe9c2fd304622b9f6caef5709db9
+=======
 >>>>>>> 42cdd8fb460afe9c2fd304622b9f6caef5709db9
             unsigned long elapsed = (now - sSessionStart - sTotalPaused) / 1000;
             showRunning(elapsed);
 
         } else if (onOff == 1 && paused == 1) {
+<<<<<<< HEAD
 <<<<<<< HEAD
             // Session is PAUSED
             if (sWasRunning) {
@@ -337,6 +396,8 @@ void vOLEDTask(void *pvParameters) {
                 sWasRunning = false;
             }
 =======
+=======
+>>>>>>> 42cdd8fb460afe9c2fd304622b9f6caef5709db9
             // ── PAUSED ──
             summaryTicksLeft = 0;
 
@@ -346,11 +407,15 @@ void vOLEDTask(void *pvParameters) {
                 Serial.println("[OLED] Session paused");
             }
 
+<<<<<<< HEAD
+>>>>>>> 42cdd8fb460afe9c2fd304622b9f6caef5709db9
+=======
 >>>>>>> 42cdd8fb460afe9c2fd304622b9f6caef5709db9
             unsigned long elapsed = (sPausedAt - sSessionStart - sTotalPaused) / 1000;
             showPaused(elapsed);
 
         } else {
+<<<<<<< HEAD
 <<<<<<< HEAD
             // onOff == 0 — session ended or not yet started
             if (sWasRunning) {
@@ -366,6 +431,8 @@ void vOLEDTask(void *pvParameters) {
     }
 }
 =======
+=======
+>>>>>>> 42cdd8fb460afe9c2fd304622b9f6caef5709db9
             // ── OFF / IDLE ──
             if (sWasRunning || sSessionStart != 0) {
                 // Session just ended — compute final stats and show summary
@@ -395,5 +462,9 @@ void vOLEDTask(void *pvParameters) {
 
         vTaskDelay(pdMS_TO_TICKS(500));
     }
+<<<<<<< HEAD
+}
+>>>>>>> 42cdd8fb460afe9c2fd304622b9f6caef5709db9
+=======
 }
 >>>>>>> 42cdd8fb460afe9c2fd304622b9f6caef5709db9
