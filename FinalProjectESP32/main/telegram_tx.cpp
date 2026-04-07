@@ -12,10 +12,11 @@
 static WiFiClientSecure client;
 static UniversalTelegramBot bot(BOT_TOKEN, client);
 
-#define TELEGRAM_COOLDOWN_MS  15000
-#define CMD_POLL_FAST_MS       3000   // poll interval before a tone is chosen
-#define CMD_POLL_SLOW_MS      30000   // poll interval once tone is set
-static unsigned long sLastTelegramSend = 0;
+#define TELEGRAM_COOLDOWN_MS      15000
+#define CMD_POLL_FAST_MS           3000   // poll interval before a tone is chosen
+#define CMD_REOPEN_CHECK_MS       30000   // how often to check for /personality after tone is set
+static unsigned long sLastTelegramSend  = 0;
+static unsigned long sLastReopenCheck   = 0;
 
 /* ── Personality ─────────────────────────────────────────────────────────── */
 static volatile bool sPersonalitySet = false;   // false until user picks a tone
@@ -122,18 +123,24 @@ void vTelegramTask(void *pvParameters) {
     char rxBuffer[GEMINI_RESPONSE_MAX_LEN];
 
     while (1) {
-        // Poll fast (3 s) while waiting for tone selection, slow (30 s) once set.
-        // Resets to fast whenever the user opens /personality again.
-        checkForCommands();
-        TickType_t pollInterval = sPersonalitySet
-                                  ? pdMS_TO_TICKS(CMD_POLL_SLOW_MS)
-                                  : pdMS_TO_TICKS(CMD_POLL_FAST_MS);
+        unsigned long now_ms = millis();
 
-        // ── FIX: Use a timeout instead of portMAX_DELAY so we keep polling ──
-        // Wait up to 5 seconds for a queued report; if nothing arrives, loop
-        // back and poll for commands again. This way typed commands and button
-        // taps are never ignored for more than ~5 seconds.
-        if (xQueueReceive(gTelegramQueue, &rxBuffer, pdMS_TO_TICKS(5000)) == pdPASS) {
+        if (!sPersonalitySet) {
+            // No tone chosen yet — poll frequently so the button press is caught quickly
+            checkForCommands();
+            xQueueReceive(gTelegramQueue, &rxBuffer, pdMS_TO_TICKS(CMD_POLL_FAST_MS));
+            continue;
+        }
+
+        // Tone is set — only check every 30 s in case user sends /personality to change it
+        if ((now_ms - sLastReopenCheck) >= CMD_REOPEN_CHECK_MS) {
+            sLastReopenCheck = now_ms;
+            checkForCommands();
+            // If /personality was sent, sPersonalitySet is now false — loop will fast-poll next iteration
+            if (!sPersonalitySet) continue;
+        }
+
+        if (xQueueReceive(gTelegramQueue, &rxBuffer, pdMS_TO_TICKS(CMD_REOPEN_CHECK_MS)) == pdPASS) {
             Serial.println("[Telegram] New message dequeued");
             unsigned long now = millis();
 
