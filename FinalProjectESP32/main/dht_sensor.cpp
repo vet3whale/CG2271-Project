@@ -40,7 +40,7 @@ void vDHTTask(void *pvParameters)
         if (xSemaphoreTake(gSensorMutex, pdMS_TO_TICKS(100)) == pdTRUE) { 
             gSensorData.esp_temp = temperature;
             gSensorData.esp_humidity = humidity;
-            xSemaphoreGive(gSensorMutex)
+            xSemaphoreGive(gSensorMutex);
         }
 
         /* Send temp to MCXC — this triggers vRXTask → gTempReadySem → vEnvTask */
