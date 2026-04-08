@@ -152,9 +152,23 @@ void vTelegramTask(void *pvParameters) {
     char rxBuffer[GEMINI_RESPONSE_MAX_LEN];
 
     client.setInsecure();
+
+    // Wait for TLS stack to stabilise before first Telegram call
+    vTaskDelay(pdMS_TO_TICKS(2000));
+
     if (xSemaphoreTake(gNetworkMutex, pdMS_TO_TICKS(10000)) == pdTRUE) {
         bot_setup();
-        bot.sendMessage(CHAT_ID, "ESP32 online! Please choose your study coach personality:", "");
+
+        // Retry the startup message up to 3 times — first TLS handshake can fail silently
+        for (int attempt = 0; attempt < 3; attempt++) {
+            if (bot.sendMessage(CHAT_ID, "ESP32 online! Please choose your study coach personality:", "")) {
+                Serial.println("[Telegram] Startup message sent");
+                break;
+            }
+            Serial.printf("[Telegram] Startup message attempt %d failed — retrying\n", attempt + 1);
+            vTaskDelay(pdMS_TO_TICKS(2000));
+        }
+
         sendPersonalityKeyboard();
         waitForPersonality();
         xSemaphoreGive(gNetworkMutex);

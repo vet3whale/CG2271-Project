@@ -157,7 +157,7 @@ void OLED_Init() {
     display.setTextColor(SSD1306_WHITE);
     display.setTextSize(1);
     display.setCursor(25, 28);
-    display.println("Study Coach");
+    display.println("Study Coach 😊");
     display.display();
     Serial.println("[OLED] Splash screen displayed");
     delay(1500);
