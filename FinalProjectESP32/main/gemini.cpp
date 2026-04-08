@@ -4,7 +4,6 @@
 #include "passwords.h"
 #include "uart_packet.h"
 #include "shared_data.h"
-#include "telegram_tx.h"   /* Telegram_GetPersonality() */
 
 /* ── Cooldown ────────────────────────────────────────────────────────────── */
 #define GEMINI_COOLDOWN_MS   20000   // 20 seconds minimum between API calls
@@ -24,12 +23,18 @@ String postGemini(const String &prompt) {
     sLastGeminiCall = now;
 
     String response = "";
-
+    
     ESP32_AI_Connect aiClient("gemini", GEMINI_KEY, GEMINI_MODEL);
-    if (xSemaphoreTake(gNetworkMutex, pdMS_TO_TICKS(15000)) == pdTRUE) {
+    if (xSemaphoreTake(gNetworkMutex, pdMS_TO_TICKS(5000)) == pdTRUE) {
         aiClient.setChatMaxTokens(300);
         aiClient.setChatTemperature(0.7);
-        aiClient.setChatSystemRole(Telegram_GetPersonality().c_str());  /* ← changed */
+        aiClient.setChatSystemRole(
+            "You are a funny study buddy. "
+            "You reply in casual Singlish-English, playful and teasing, like a close friend roasting the user a bit. "
+            "Be dramatic and funny, but still helpful. "
+            "Do not be vulgar, hateful, or overly harsh. "
+            "Always include one practical suggestion."
+        );
         response = aiClient.chat(prompt);
         xSemaphoreGive(gNetworkMutex);
     } else {
@@ -55,13 +60,14 @@ String postGemini(const String &prompt) {
         strncpy(msgBuffer, response.c_str(), GEMINI_RESPONSE_MAX_LEN - 1);
         msgBuffer[GEMINI_RESPONSE_MAX_LEN - 1] = '\0';
 
+        // Send the buffer to the queue (do not wait if full)
         if (xQueueSend(gTelegramQueue, &msgBuffer, 0) != pdPASS) {
             Serial.println("[Gemini] Queue full, message dropped");
         } else {
             Serial.println("[Gemini] Message queued for Telegram");
         }
     }
-
+    
     return response;
 }
 
@@ -120,6 +126,7 @@ void vGeminiTask(void *pvParameters) {
             String envStr = String(geminiEnvConditionStr(envCondition));
 
             String prompt =
+                "You are a study environment assistant. "
                 "A study session has just ended.\n\n"
 
                 "Measured session data:\n"
@@ -143,24 +150,25 @@ void vGeminiTask(void *pvParameters) {
                 "2. Sound is the second highest priority.\n"
                 "3. Temperature should be mentioned only if it is far outside the ideal range.\n"
                 "4. Humidity can be mentioned only if it is clearly uncomfortable.\n\n"
-                "5. Never judge, comment on, or reference the study duration — do not call it short, long, good, or bad.\n"
+                "5. Dont bother about their study duration.\n"
 
                 "Instructions:\n"
                 "1. Start with exactly: Study Session Completed! Time: " + timeStr + "\n"
                 "2. On the next line, write exactly: Average Temperature and Humidity: "
                     + String(temp, 1) + " C, " + String(humidity, 1) + " %\n"
                 "3. On the next line, write exactly: Suggestions: \n"
-                "4. In Suggestions, praise the user positively for completing the session — never mention or imply anything about the duration.\n"
+                "4. In Suggestions, praise the user briefly for finishing the session.\n"
                 "5. Compare measured values against the ideal ranges silently, but mention only the biggest 1 issue, or 2 issues only if both are important.\n"
                 "6. Always prioritize bad lighting first, then noisy environment.\n"
                 "7. If light is bad, talk about light instead of sound unless sound is much worse.\n"
                 "8. Ignore temperature unless it is very far from ideal.\n"
                 "9. Give exactly one practical suggestion.\n"
                 "10. If conditions were generally good, say so clearly.\n"
-                "11. Deliver the Suggestions text in the tone and personality described in your system role — do not default to any particular style.\n"
-                "12. Use exactly one emoji total.\n"
-                "13. No markdown, no bullet points, no asterisks.\n"
-                "14. Keep the whole reply concise.";
+                "11. Keep the Suggestions text short, friendly, slightly Singlish, and natural. Not too corny.\n"
+                "12. If the environment is bad, you may lightly roast the user in a playful way, but keep it mild.\n"
+                "13. Use exactly one emoji total.\n"
+                "14. No markdown, no bullet points, no asterisks.\n"
+                "15. Keep the whole reply concise.";
 
             postGemini(prompt);
         }
