@@ -114,6 +114,8 @@ static void handleNewMessages(int numNew) {
 }
 
 /* ── Blocks until personality chosen or 20 s timeout → defaults to Formal ── */
+// Mutex is taken and released per poll so the TCP connection is always fresh
+// and other tasks are not starved during the wait window.
 static void waitForPersonality() {
     unsigned long deadline = millis() + 20000;
 
@@ -121,18 +123,25 @@ static void waitForPersonality() {
         if (millis() >= deadline) {
             sPersonality    = PERSONALITY_FORMAL;
             sPersonalitySet = true;
-            bot.sendMessage(CHAT_ID, "No selection received — defaulting to Formal mode.", "");
+            if (xSemaphoreTake(gNetworkMutex, pdMS_TO_TICKS(5000)) == pdTRUE) {
+                bot.sendMessage(CHAT_ID, "No selection received — defaulting to Formal mode.", "");
+                xSemaphoreGive(gNetworkMutex);
+            }
             Serial.println("[Telegram] Personality timeout — defaulted to Formal");
             return;
         }
 
-        int numNew = bot.getUpdates(bot.last_message_received + 1);
-        while (numNew) {
-            handleNewMessages(numNew);
-            numNew = bot.getUpdates(bot.last_message_received + 1);
+        // Take mutex, poll, release — fresh connection each time
+        if (xSemaphoreTake(gNetworkMutex, pdMS_TO_TICKS(3000)) == pdTRUE) {
+            int numNew = bot.getUpdates(bot.last_message_received + 1);
+            while (numNew) {
+                handleNewMessages(numNew);
+                numNew = bot.getUpdates(bot.last_message_received + 1);
+            }
+            xSemaphoreGive(gNetworkMutex);
         }
 
-        vTaskDelay(pdMS_TO_TICKS(500));
+        vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }
 
@@ -154,25 +163,37 @@ void vTelegramTask(void *pvParameters) {
     client.setInsecure();
 
     // Wait for TLS stack to stabilise before first Telegram call
-    vTaskDelay(pdMS_TO_TICKS(2000));
+    vTaskDelay(pdMS_TO_TICKS(3000));
 
+    // Register commands
     if (xSemaphoreTake(gNetworkMutex, pdMS_TO_TICKS(10000)) == pdTRUE) {
         bot_setup();
+        xSemaphoreGive(gNetworkMutex);
+    }
 
-        // Retry the startup message up to 3 times — first TLS handshake can fail silently
-        for (int attempt = 0; attempt < 3; attempt++) {
-            if (bot.sendMessage(CHAT_ID, "ESP32 online! Please choose your study coach personality:", "")) {
+    // Send startup message — retry up to 3 times, releasing mutex between attempts
+    for (int attempt = 0; attempt < 3; attempt++) {
+        if (xSemaphoreTake(gNetworkMutex, pdMS_TO_TICKS(5000)) == pdTRUE) {
+            bool ok = bot.sendMessage(CHAT_ID, "ESP32 online! Please choose your study coach personality:", "");
+            xSemaphoreGive(gNetworkMutex);
+            if (ok) {
                 Serial.println("[Telegram] Startup message sent");
                 break;
             }
-            Serial.printf("[Telegram] Startup message attempt %d failed — retrying\n", attempt + 1);
-            vTaskDelay(pdMS_TO_TICKS(2000));
         }
+        Serial.printf("[Telegram] Startup message attempt %d failed — retrying\n", attempt + 1);
+        vTaskDelay(pdMS_TO_TICKS(2000));
+    }
 
+    // Send keyboard — separate mutex take so TCP connection is fresh
+    vTaskDelay(pdMS_TO_TICKS(500));
+    if (xSemaphoreTake(gNetworkMutex, pdMS_TO_TICKS(5000)) == pdTRUE) {
         sendPersonalityKeyboard();
-        waitForPersonality();
         xSemaphoreGive(gNetworkMutex);
     }
+
+    // Block until user picks personality — mutex released between each poll
+    waitForPersonality();
 
     while (1) {
         unsigned long now = millis();
