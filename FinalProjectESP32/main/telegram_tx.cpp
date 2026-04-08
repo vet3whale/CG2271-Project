@@ -63,10 +63,8 @@ static void handleNewMessages(int numNew) {
         if (text == "/start" || text == "/personality") {
             sPersonalitySet = false;
             String kb =
-                "[[{\"text\":\"😂 Funny\",  \"callback_data\":\"/funny\"},"
-                "  {\"text\":\"😤 Strict\", \"callback_data\":\"/strict\"}],"
-                " [{\"text\":\"💼 Formal\", \"callback_data\":\"/formal\"},"
-                "  {\"text\":\"🧘 Zen\",    \"callback_data\":\"/zen\"}]]";
+                "[[{\"text\":\"Funny\",\"callback_data\":\"/funny\"},{\"text\":\"Strict\",\"callback_data\":\"/strict\"}],"
+                "[{\"text\":\"Formal\",\"callback_data\":\"/formal\"},{\"text\":\"Zen\",\"callback_data\":\"/zen\"}]]";
             bot.sendMessageWithInlineKeyboard(chat, "Choose your study coach personality:", "", kb);
 
         } else if (text == "/funny") {
