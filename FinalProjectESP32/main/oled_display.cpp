@@ -5,6 +5,7 @@
 #include <Adafruit_SSD1306.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "uart_packet.h"
 
 #define SCREEN_WIDTH  128
 #define SCREEN_HEIGHT  64
@@ -25,7 +26,10 @@ static float    sHumSum       = 0.0f;
 static uint32_t sSampleCount  = 0;
 static float    sAvgTemp      = 0.0f;
 static float    sAvgHum       = 0.0f;
-static unsigned long sFinalElapsed = 0;  // saved when session ends
+static unsigned long sFinalElapsed = 0;
+
+/* ── Environment condition ───────────────────────────────────────────────── */
+static uint8_t sEnvCondition = ENV_GOOD;  // default
 
 static String formatTime(unsigned long seconds) {
     unsigned long h = seconds / 3600;
@@ -36,6 +40,38 @@ static String formatTime(unsigned long seconds) {
     return String(buf);
 }
 
+/* ── Emoji face drawn at top-right corner ────────────────────────────────── */
+static void drawFace(int x, int y, uint8_t envCondition) {
+    int cx = x + 10;
+    int cy = y + 10;
+    int r  = 10;
+
+    // Face outline
+    display.drawCircle(cx, cy, r, SSD1306_WHITE);
+
+    // Eyes
+    display.fillCircle(cx - 3, cy - 3, 1, SSD1306_WHITE);
+    display.fillCircle(cx + 3, cy - 3, 1, SSD1306_WHITE);
+
+    // Mouth
+if (envCondition == ENV_GOOD) {
+    // Smile — curve downward
+    for (int dx = -4; dx <= 4; dx++) {
+        int dy = -(dx * dx) / 6 + 6;
+        display.drawPixel(cx + dx, cy + dy, SSD1306_WHITE);
+    }
+} else if (envCondition == ENV_MODERATE) {
+    // Straight face
+    display.drawLine(cx - 4, cy + 4, cx + 4, cy + 4, SSD1306_WHITE);
+} else {
+    // Frown — curve upward
+    for (int dx = -4; dx <= 4; dx++) {
+        int dy = (dx * dx) / 6 + 3;
+        display.drawPixel(cx + dx, cy + dy, SSD1306_WHITE);
+    }
+}
+}
+
 /* ── Display states ──────────────────────────────────────────────────────── */
 static void showRunning(unsigned long elapsed) {
     display.clearDisplay();
@@ -43,7 +79,7 @@ static void showRunning(unsigned long elapsed) {
     display.setTextColor(SSD1306_WHITE);
     display.setCursor(20, 0);
     display.println("STUDY SESSION");
-    display.drawLine(0, 10, 127, 10, SSD1306_WHITE);
+    display.drawLine(0, 10, 100, 10, SSD1306_WHITE);
     display.setTextSize(2);
     display.setCursor(10, 18);
     display.println(formatTime(elapsed));
@@ -57,6 +93,10 @@ static void showRunning(unsigned long elapsed) {
 
     display.setCursor(85, 52);
     display.println("RUN");
+
+    // Emoji face top right
+    drawFace(105, 0, sEnvCondition);
+
     display.display();
 }
 
@@ -66,7 +106,7 @@ static void showPaused(unsigned long elapsed) {
     display.setTextColor(SSD1306_WHITE);
     display.setCursor(20, 0);
     display.println("STUDY SESSION");
-    display.drawLine(0, 10, 127, 10, SSD1306_WHITE);
+    display.drawLine(0, 10, 100, 10, SSD1306_WHITE);
     display.fillRect(44, 14, 10, 20, SSD1306_WHITE);
     display.fillRect(60, 14, 10, 20, SSD1306_WHITE);
     display.setTextSize(1);
@@ -77,6 +117,10 @@ static void showPaused(unsigned long elapsed) {
     // Live avg temp & humidity while paused
     display.setCursor(0, 50);
     display.printf("T:%.1fC  H:%.1f%%", sAvgTemp, sAvgHum);
+
+    // Emoji face top right
+    drawFace(105, 0, sEnvCondition);
+
     display.display();
 }
 
@@ -172,17 +216,17 @@ void vOLEDTask(void *pvParameters) {
     float   temp   = 0.0f;
     float   hum    = 0.0f;
 
-    // Summary screen duration: show for 5 seconds (10 × 500ms ticks)
     uint8_t summaryTicksLeft = 0;
 
     Serial.println("[OLED] Task started");
 
     while (1) {
         if (xSemaphoreTake(gSensorMutex, pdMS_TO_TICKS(10)) == pdTRUE) {
-            onOff  = gSensorData.on_off;
-            paused = gSensorData.paused;
-            temp   = gSensorData.esp_temp;
-            hum    = gSensorData.esp_humidity;
+            onOff         = gSensorData.on_off;
+            paused        = gSensorData.paused;
+            temp          = gSensorData.esp_temp;
+            hum           = gSensorData.esp_humidity;
+            sEnvCondition = gSensorData.env_condition;  // read env condition
             xSemaphoreGive(gSensorMutex);
         } else {
             Serial.println("[OLED] Warning: could not take sensor mutex");
@@ -196,7 +240,6 @@ void vOLEDTask(void *pvParameters) {
 
             if (!sWasRunning) {
                 if (sSessionStart == 0) {
-                    // Fresh start — reset all accumulators
                     sSessionStart = now;
                     sTotalPaused  = 0;
                     sTempSum      = 0.0f;
@@ -210,14 +253,12 @@ void vOLEDTask(void *pvParameters) {
                 sWasRunning = true;
             }
 
-            // Accumulate sample
             if (temp > 0.0f && hum > 0.0f) {
                 sTempSum += temp;
                 sHumSum  += hum;
                 sSampleCount++;
             }
 
-            // Update running averages
             if (sSampleCount > 0) {
                 sAvgTemp = sTempSum / sSampleCount;
                 sAvgHum  = sHumSum  / sSampleCount;
@@ -242,7 +283,6 @@ void vOLEDTask(void *pvParameters) {
         } else {
             // ── OFF / IDLE ──
             if (sWasRunning || sSessionStart != 0) {
-                // Session just ended — compute final stats and show summary
                 sFinalElapsed = (now - sSessionStart - sTotalPaused) / 1000;
                 if (sSampleCount > 0) {
                     sAvgTemp = sTempSum / sSampleCount;
@@ -251,12 +291,11 @@ void vOLEDTask(void *pvParameters) {
                 Serial.printf("[OLED] Session ended — elapsed=%lus avgT=%.1f avgH=%.1f samples=%lu\n",
                               sFinalElapsed, sAvgTemp, sAvgHum, sSampleCount);
 
-                // Reset session state
                 sWasRunning   = false;
                 sSessionStart = 0;
                 sTotalPaused  = 0;
 
-                summaryTicksLeft = 10; // show summary for ~5 seconds
+                summaryTicksLeft = 10;
             }
 
             if (summaryTicksLeft > 0) {

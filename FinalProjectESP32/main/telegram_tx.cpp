@@ -60,7 +60,7 @@ static void handleNewMessages(int numNew) {
             bot.answerCallbackQuery(msg.query_id, "");
         }
 
-        if (text == "/start" || text == "/personality") {
+        if (text == "/start@studycoachesp32sbot" || text == "/personality@studycoachesp32sbot") {
             sPersonalitySet = false;
             String kb =
                 "[[{\"text\":\"😂 Funny\",  \"callback_data\":\"/funny\"},"
