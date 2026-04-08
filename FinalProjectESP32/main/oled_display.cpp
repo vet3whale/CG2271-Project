@@ -20,6 +20,14 @@ static unsigned long sPausedAt     = 0;
 static unsigned long sTotalPaused  = 0;
 static bool          sWasRunning   = false;
 
+// session summary message
+static char  sGeminiLines[60][22];   // ← was [30][22]; size-2 font = 10 chars/line
+static int   sGeminiLineCount = 0;
+static int   sScrollPixelY    = 0;
+static int   sScrollHoldTicks = 0;
+static bool  sScrollDone      = false;
+static bool  sShowingGemini   = false;
+
 /* ── Session stats accumulators ──────────────────────────────────────────── */
 static float    sTempSum      = 0.0f;
 static float    sHumSum       = 0.0f;
@@ -70,6 +78,103 @@ if (envCondition == ENV_GOOD) {
         display.drawPixel(cx + dx, cy + dy, SSD1306_WHITE);
     }
 }
+}
+
+static void stripNonAscii(char* dst, const char* src, size_t maxLen) {
+    size_t j = 0;
+    bool lastWasSpace = false;
+    for (size_t i = 0; src[i] != '\0' && j < maxLen - 1; i++) {
+        unsigned char c = (unsigned char)src[i];
+        if (c >= 0x20 && c <= 0x7E) {          // printable ASCII only
+            bool isSpace = (c == ' ');
+            if (isSpace && lastWasSpace) continue; // collapse double spaces
+            dst[j++] = (char)c;
+            lastWasSpace = isSpace;
+        }
+        // skip everything else: bytes >= 0x80 (UTF-8 emoji sequences), \n, \r
+    }
+    // Trim trailing space
+    while (j > 0 && dst[j - 1] == ' ') j--;
+    dst[j] = '\0';
+}
+
+static void wrapGeminiText(const char* msg) {
+    // Strip emojis and non-ASCII first
+    char clean[GEMINI_RESPONSE_MAX_LEN];
+    stripNonAscii(clean, msg, GEMINI_RESPONSE_MAX_LEN);
+
+    sGeminiLineCount = 0;
+    sScrollPixelY    = 0;
+    sScrollHoldTicks = 0;
+    sScrollDone      = false;
+
+    const int WRAP = 21;   // ← chars per line at text size 2
+    int len = strlen(clean);
+    int pos = 0;
+
+    while (pos < len && sGeminiLineCount < 60) {
+        int remaining = len - pos;
+        if (remaining <= WRAP) {
+            strncpy(sGeminiLines[sGeminiLineCount], clean + pos, remaining);
+            sGeminiLines[sGeminiLineCount][remaining] = '\0';
+            sGeminiLineCount++;
+            break;
+        }
+        // Break on last space within the WRAP window
+        int breakAt = pos + WRAP;
+        for (int i = pos + WRAP; i > pos; i--) {
+            if (clean[i] == ' ') { breakAt = i; break; }
+        }
+        int lineLen = breakAt - pos;
+        strncpy(sGeminiLines[sGeminiLineCount], clean + pos, lineLen);
+        sGeminiLines[sGeminiLineCount][lineLen] = '\0';
+        sGeminiLineCount++;
+        pos = breakAt + (clean[breakAt] == ' ' ? 1 : 0);
+    }
+}
+
+static bool showGeminiScroll() {
+    const int HEADER_H    = 11;         // size-1 header: 8px text + 3px gap
+    const int TEXT_AREA_H = SCREEN_HEIGHT - HEADER_H;  // 53px
+    const int CHAR_H      = 8;         // size-2 font height
+    const int LINE_GAP    = 5;          // extra gap between lines
+    const int LINE_H      = CHAR_H + LINE_GAP;  // 20px per line
+    const int SCROLL_SPEED = 6;
+
+    display.clearDisplay();
+
+    // Fixed header — keep size 1 so it doesn't eat too much vertical space
+    display.setTextSize(1);
+    display.setTextColor(SSD1306_WHITE);
+    display.setCursor(0, 0);
+    display.println("Gemini Coach:");
+    display.drawLine(0, 9, 127, 9, SSD1306_WHITE);
+
+    display.setTextSize(1);
+    for (int i = 0; i < sGeminiLineCount; i++) {
+        int y = HEADER_H + (i * LINE_H) - sScrollPixelY;
+        if (y + CHAR_H <= HEADER_H) continue;  // above viewport
+        if (y >= SCREEN_HEIGHT)     break;      // below viewport
+        display.setCursor(0, y);
+        display.print(sGeminiLines[i]);
+    }
+
+    display.display();
+
+    // Scroll until last line is fully visible, then hold ~3s
+    int totalTextH = sGeminiLineCount * LINE_H;
+    int maxScroll  = max(0, totalTextH - TEXT_AREA_H);
+
+    if (sScrollPixelY < maxScroll) {
+        sScrollPixelY = min(sScrollPixelY + SCROLL_SPEED, maxScroll);
+    } else {
+        sScrollHoldTicks++;
+        if (sScrollHoldTicks >= 6) {  // 6 × 500ms = 3s hold
+            sScrollDone = true;
+        }
+    }
+
+    return sScrollDone;
 }
 
 static void showLoading() {
@@ -310,20 +415,47 @@ void vOLEDTask(void *pvParameters) {
                     sAvgHum  = sHumSum  / sSampleCount;
                 }
                 Serial.printf("[OLED] Session ended — elapsed=%lus avgT=%.1f avgH=%.1f samples=%lu\n",
-                              sFinalElapsed, sAvgTemp, sAvgHum, sSampleCount);
+                            sFinalElapsed, sAvgTemp, sAvgHum, sSampleCount);
 
-                sWasRunning   = false;
-                sSessionStart = 0;
-                sTotalPaused  = 0;
-
+                sWasRunning    = false;
+                sSessionStart  = 0;
+                sTotalPaused   = 0;
+                sShowingGemini = false;   // reset any leftover scroll state
                 summaryTicksLeft = 10;
             }
 
             if (summaryTicksLeft > 0) {
+                // ── Show session summary ──
                 showSummary();
                 summaryTicksLeft--;
+
+            } else if (sShowingGemini) {
+                // ── Scroll Gemini response ──
+                if (showGeminiScroll()) {
+                    sShowingGemini = false;
+                    // Mark message as consumed
+                    if (xSemaphoreTake(gGeminiMutex, pdMS_TO_TICKS(10)) == pdTRUE) {
+                        gGeminiOLEDReady = false;
+                        xSemaphoreGive(gGeminiMutex);
+                    }
+                }
+
             } else {
-                showIdle();
+                // ── Check for a pending Gemini message, otherwise idle ──
+                bool    ready = false;
+                char    msgBuf[GEMINI_RESPONSE_MAX_LEN];
+                if (xSemaphoreTake(gGeminiMutex, pdMS_TO_TICKS(10)) == pdTRUE) {
+                    ready = gGeminiOLEDReady;
+                    if (ready) strncpy(msgBuf, gGeminiOLEDMsg, GEMINI_RESPONSE_MAX_LEN);
+                    xSemaphoreGive(gGeminiMutex);
+                }
+
+                if (ready) {
+                    wrapGeminiText(msgBuf);
+                    sShowingGemini = true;
+                } else {
+                    showIdle();
+                }
             }
         }
 

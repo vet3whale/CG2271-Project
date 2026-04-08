@@ -39,4 +39,7 @@ extern SemaphoreHandle_t gGeminiSemaphore;
 extern SemaphoreHandle_t gNetworkMutex;
 extern volatile bool gSystemReady;
 
+extern char gGeminiOLEDMsg[GEMINI_RESPONSE_MAX_LEN];
+extern volatile bool gGeminiOLEDReady;
+
 #endif // SHARED_DATA_H

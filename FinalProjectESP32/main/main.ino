@@ -21,6 +21,9 @@ QueueHandle_t gTelegramQueue = NULL;
 SemaphoreHandle_t gGeminiMutex = NULL;
 SemaphoreHandle_t gGeminiSemaphore = NULL;
 
+char gGeminiOLEDMsg[GEMINI_RESPONSE_MAX_LEN] = {0};
+volatile bool gGeminiOLEDReady = false;
+
 void WiFi_Connect(void) {
     if (WiFi.status() == WL_CONNECTED) {
         Serial.println("[WiFi] Already connected — skipping reinit");
@@ -50,7 +53,7 @@ void setup() {
 
     WiFi_Connect();
     gSystemReady = true;
-    
+
     xTaskCreate(vOLEDTask,     "OLED",     OLED_TASK_STACK_SIZE, NULL, OLED_TASK_PRIORITY, NULL);
     xTaskCreate(vTelegramTask, "Telegram", 6144, NULL, 3, NULL);
     xTaskCreate(vDHTTask,      "DHT",      2048, NULL, 2, NULL);

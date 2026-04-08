@@ -66,6 +66,12 @@ String postGemini(const String &prompt) {
         } else {
             Serial.println("[Gemini] Message queued for Telegram");
         }
+        if (xSemaphoreTake(gGeminiMutex, pdMS_TO_TICKS(100)) == pdTRUE) {
+            strncpy(gGeminiOLEDMsg, msgBuffer, GEMINI_RESPONSE_MAX_LEN - 1);
+            gGeminiOLEDMsg[GEMINI_RESPONSE_MAX_LEN - 1] = '\0';
+            gGeminiOLEDReady = true;
+            xSemaphoreGive(gGeminiMutex);
+        }
     }
     
     return response;
