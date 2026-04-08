@@ -72,6 +72,22 @@ if (envCondition == ENV_GOOD) {
 }
 }
 
+static void showLoading() {
+    display.clearDisplay();
+    display.setTextSize(1);
+    display.setTextColor(SSD1306_WHITE);
+
+    // "Study Coach" centred on line 1
+    display.setCursor(25, 20);
+    display.println("Study Coach");
+
+    // "Loading..." centred on line 2
+    display.setCursor(30, 36);
+    display.println("Loading...");
+
+    display.display();
+}
+
 /* ── Display states ──────────────────────────────────────────────────────── */
 static void showRunning(unsigned long elapsed) {
     display.clearDisplay();
@@ -200,11 +216,12 @@ void OLED_Init() {
     display.clearDisplay();
     display.setTextColor(SSD1306_WHITE);
     display.setTextSize(1);
-    display.setCursor(25, 28);
+    display.setCursor(25, 20);
     display.println("Study Coach");
+    display.setCursor(30, 36);
+    display.println("Loading...");
     display.display();
-    Serial.println("[OLED] Splash screen displayed");
-    delay(1500);
+    Serial.println("[OLED] Loading screen displayed");
 }
 
 /* ── Task ────────────────────────────────────────────────────────────────── */
@@ -231,7 +248,11 @@ void vOLEDTask(void *pvParameters) {
         } else {
             Serial.println("[OLED] Warning: could not take sensor mutex");
         }
-
+        if (!gSystemReady || temp <= 0.0f || hum <= 0.0f) {
+            showLoading();
+            vTaskDelay(pdMS_TO_TICKS(500));
+            continue;
+        }
         unsigned long now = millis();
 
         if (onOff == 1 && paused == 0) {

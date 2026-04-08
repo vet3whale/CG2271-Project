@@ -37,5 +37,6 @@ extern SemaphoreHandle_t gGeminiMutex;
 extern SemaphoreHandle_t gGeminiSemaphore;
 
 extern SemaphoreHandle_t gNetworkMutex;
+extern volatile bool gSystemReady;
 
 #endif // SHARED_DATA_H
