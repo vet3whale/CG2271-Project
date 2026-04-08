@@ -38,7 +38,7 @@ static const String PERSONALITY_FORMAL =
     "Conclude with exactly one well-reasoned, actionable recommendation phrased as professional advice. "
     "Maintain a respectful, objective tone throughout.";
 
-String Telegram_GetPersonality() { return sPersonality; }
+String Telegram_GetPersonality()  { return sPersonality; }
 bool   Telegram_IsPersonalitySet() { return sPersonalitySet; }
 
 /* ── Helpers ─────────────────────────────────────────────────────────────── */
@@ -56,14 +56,11 @@ static void handleNewMessages(int numNew) {
         String text = msg.text;
         String chat = msg.chat_id;
 
-        // Acknowledge callback queries immediately to clear the loading spinner
-        if (msg.type == F("callback_query")) {
-            bot.answerCallbackQuery(msg.query_id, "");
-        }
+        Serial.print("[Telegram] Message type: "); Serial.println(msg.type);
+        Serial.print("[Telegram] Message text: "); Serial.println(text);
 
         if (text == "/start" || text == "/start@studycoachesp32sbot" ||
             text == "/personality" || text == "/personality@studycoachesp32sbot") {
-            // Personality is locked once set — silently ignore repeat requests
             if (!sPersonalitySet) {
                 sendPersonalityKeyboard();
             }
@@ -78,7 +75,8 @@ static void handleNewMessages(int numNew) {
                 "Never be vulgar, hateful, or overly harsh. "
                 "Keep the tone light, fun, and encouraging overall.";
             sPersonalitySet = true;
-            bot.sendMessage(chat, "Funny Singlish mode activated lah! Let's go sia!", "");
+            Serial.println("[Telegram] Personality set: Funny");
+            bot.sendMessage(CHAT_ID, "Funny Singlish mode activated lah! Let's go sia!", "");
 
         } else if (text == "/strict") {
             sPersonality =
@@ -91,12 +89,14 @@ static void handleNewMessages(int numNew) {
                 "Always end with exactly one firm, actionable directive. "
                 "Do not praise unless it is genuinely deserved.";
             sPersonalitySet = true;
-            bot.sendMessage(chat, "Strict mode activated. No excuses. Get to work.", "");
+            Serial.println("[Telegram] Personality set: Strict");
+            bot.sendMessage(CHAT_ID, "Strict mode activated. No excuses. Get to work.", "");
 
         } else if (text == "/formal") {
             sPersonality    = PERSONALITY_FORMAL;
             sPersonalitySet = true;
-            bot.sendMessage(chat, "Formal mode activated. Your session debrief will be delivered professionally.", "");
+            Serial.println("[Telegram] Personality set: Formal");
+            bot.sendMessage(CHAT_ID, "Formal mode activated. Your session debrief will be delivered professionally.", "");
 
         } else if (text == "/zen") {
             sPersonality =
@@ -108,14 +108,13 @@ static void handleNewMessages(int numNew) {
                 "Gently surface the one most important environmental insight, and offer it as a kind suggestion rather than a correction. "
                 "End with exactly one calming, practical recommendation that nurtures both focus and wellbeing.";
             sPersonalitySet = true;
-            bot.sendMessage(chat, "Zen mode activated. Breathe. You are doing well.", "");
+            Serial.println("[Telegram] Personality set: Zen");
+            bot.sendMessage(CHAT_ID, "Zen mode activated. Breathe. You are doing well.", "");
         }
     }
 }
 
 /* ── Blocks until personality chosen or 20 s timeout → defaults to Formal ── */
-// Mutex is taken and released per poll so the TCP connection is always fresh
-// and other tasks are not starved during the wait window.
 static void waitForPersonality() {
     unsigned long deadline = millis() + 20000;
 
@@ -123,26 +122,22 @@ static void waitForPersonality() {
         if (millis() >= deadline) {
             sPersonality    = PERSONALITY_FORMAL;
             sPersonalitySet = true;
-            if (xSemaphoreTake(gNetworkMutex, pdMS_TO_TICKS(5000)) == pdTRUE) {
-                bot.sendMessage(CHAT_ID, "No selection received — defaulting to Formal mode.", "");
-                xSemaphoreGive(gNetworkMutex);
-            }
+            bot.sendMessage(CHAT_ID, "No selection received — defaulting to Formal mode.", "");
             Serial.println("[Telegram] Personality timeout — defaulted to Formal");
             return;
         }
 
-        // Take mutex, poll, release — fresh connection each time
-        if (xSemaphoreTake(gNetworkMutex, pdMS_TO_TICKS(3000)) == pdTRUE) {
-            int numNew = bot.getUpdates(bot.last_message_received + 1);
-            while (numNew) {
-                handleNewMessages(numNew);
-                numNew = bot.getUpdates(bot.last_message_received + 1);
-            }
-            xSemaphoreGive(gNetworkMutex);
+        int numNew = bot.getUpdates(bot.last_message_received + 1);
+        Serial.printf("[Telegram] waitForPersonality poll — %d new updates\n", numNew);
+        while (numNew) {
+            handleNewMessages(numNew);
+            numNew = bot.getUpdates(bot.last_message_received + 1);
         }
 
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
+
+    Serial.println("[Telegram] Personality set — proceeding");
 }
 
 /* ── Command registration ────────────────────────────────────────────────── */
@@ -160,58 +155,48 @@ void vTelegramTask(void *pvParameters) {
 
     char rxBuffer[GEMINI_RESPONSE_MAX_LEN];
 
+    // No mutex used in this task — bot object and client are only ever touched
+    // here, so there is no cross-task contention on these objects.
+    // gNetworkMutex is only used when sending the Gemini report to avoid
+    // colliding with vGeminiTask's ESP32_AI_Connect calls.
     client.setInsecure();
 
-    // Wait for TLS stack to stabilise before first Telegram call
+    // Wait for TLS stack to stabilise
     vTaskDelay(pdMS_TO_TICKS(3000));
 
-    // Register commands
-    if (xSemaphoreTake(gNetworkMutex, pdMS_TO_TICKS(10000)) == pdTRUE) {
-        bot_setup();
-        xSemaphoreGive(gNetworkMutex);
-    }
+    bot_setup();
+    vTaskDelay(pdMS_TO_TICKS(500));
 
-    // Send startup message — retry up to 3 times, releasing mutex between attempts
+    // Retry startup message up to 3 times
     for (int attempt = 0; attempt < 3; attempt++) {
-        if (xSemaphoreTake(gNetworkMutex, pdMS_TO_TICKS(5000)) == pdTRUE) {
-            bool ok = bot.sendMessage(CHAT_ID, "ESP32 online! Please choose your study coach personality:", "");
-            xSemaphoreGive(gNetworkMutex);
-            if (ok) {
-                Serial.println("[Telegram] Startup message sent");
-                break;
-            }
+        if (bot.sendMessage(CHAT_ID, "ESP32 online! Please choose your study coach personality:", "")) {
+            Serial.println("[Telegram] Startup message sent");
+            break;
         }
         Serial.printf("[Telegram] Startup message attempt %d failed — retrying\n", attempt + 1);
         vTaskDelay(pdMS_TO_TICKS(2000));
     }
 
-    // Send keyboard — separate mutex take so TCP connection is fresh
     vTaskDelay(pdMS_TO_TICKS(500));
-    if (xSemaphoreTake(gNetworkMutex, pdMS_TO_TICKS(5000)) == pdTRUE) {
-        sendPersonalityKeyboard();
-        xSemaphoreGive(gNetworkMutex);
-    }
+    sendPersonalityKeyboard();
 
-    // Block until user picks personality — mutex released between each poll
+    // Block here until personality chosen or 20 s timeout
     waitForPersonality();
 
     while (1) {
         unsigned long now = millis();
 
-        // Poll Telegram on a timed interval — take mutex once, drain all updates, release
+        // Poll Telegram on a timed interval — library pattern
         if (now - sLastPollTime > BOT_POLL_MS) {
             sLastPollTime = now;
-            if (xSemaphoreTake(gNetworkMutex, pdMS_TO_TICKS(2000)) == pdTRUE) {
-                int numNew = bot.getUpdates(bot.last_message_received + 1);
-                while (numNew) {
-                    handleNewMessages(numNew);
-                    numNew = bot.getUpdates(bot.last_message_received + 1);
-                }
-                xSemaphoreGive(gNetworkMutex);
+            int numNew = bot.getUpdates(bot.last_message_received + 1);
+            while (numNew) {
+                handleNewMessages(numNew);
+                numNew = bot.getUpdates(bot.last_message_received + 1);
             }
         }
 
-        // Send Gemini report if one is queued — short timeout so polling is not starved
+        // Send Gemini report if one is queued
         if (xQueueReceive(gTelegramQueue, &rxBuffer, pdMS_TO_TICKS(100)) == pdPASS) {
             Serial.println("[Telegram] Report dequeued");
             now = millis();
@@ -221,6 +206,7 @@ void vTelegramTask(void *pvParameters) {
                 continue;
             }
 
+            // Only take mutex here to guard against vGeminiTask using WiFi simultaneously
             if (xSemaphoreTake(gNetworkMutex, pdMS_TO_TICKS(15000)) == pdTRUE) {
                 if (bot.sendMessage(CHAT_ID, String(rxBuffer), "")) {
                     Serial.println("[Telegram] Report sent successfully");
