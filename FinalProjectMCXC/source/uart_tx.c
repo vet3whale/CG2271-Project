@@ -90,8 +90,8 @@ void vTxTask(void *pvParameters)
             tap       = (uint8_t)gAverageSensorData.tap_event;
             on_off    = (uint8_t)gAverageSensorData.on_off;
             paused = (uint8_t)gAverageSensorData.paused;
-            light     = gAverageSensorData.light_raw;
-            sound     = gAverageSensorData.sound_raw;
+            light     = gSensorData.light_raw;
+            sound     = gSensorData.sound_raw;
             triggered = gAverageSensorData.sound_triggered;
             env_cond  = gAverageSensorData.env_condition;
             temp = gAverageSensorData.temperature;

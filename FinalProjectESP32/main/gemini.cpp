@@ -29,11 +29,10 @@ String postGemini(const String &prompt) {
         aiClient.setChatMaxTokens(300);
         aiClient.setChatTemperature(0.7);
         aiClient.setChatSystemRole(
-            "You are a funny study buddy. "
-            "You reply in casual Singlish-English, playful and teasing, like a close friend roasting the user a bit. "
-            "Be dramatic and funny, but still helpful. "
-            "Do not be vulgar, hateful, or overly harsh. "
-            "Always include one practical suggestion."
+            "You are a supportive, encouraging, and helpful study buddy. "
+            "You reply in a clear, friendly, and polite tone. "
+            "Always be constructive and never make fun of or judge the user. "
+            "Always include one practical suggestion to improve their study environment."
         );
         response = aiClient.chat(prompt);
         xSemaphoreGive(gNetworkMutex);
@@ -147,7 +146,7 @@ void vGeminiTask(void *pvParameters) {
                 "Ideal study environment:\n"
                 "- Temperature: " + String(IDEAL_TEMP_MIN, 1) + " to " + String(IDEAL_TEMP_MAX, 1) + " C\n"
                 "- Humidity: " + String(IDEAL_HUM_MIN, 1) + " to " + String(IDEAL_HUM_MAX, 1) + " %\n"
-                "- Light: " + " below " + String(IDEAL_LIGHT_MAX) + "\n"
+                "- Light: below " + String(IDEAL_LIGHT_MAX) + "\n"
                 "- Sound: below " + String(IDEAL_SOUND_MAX) + "\n"
                 "- Repeated sound triggers are bad for focus\n\n"
 
@@ -155,23 +154,23 @@ void vGeminiTask(void *pvParameters) {
                 "1. Light is the highest priority. Higher value in Light means dimmer.\n"
                 "2. Sound is the second highest priority.\n"
                 "3. Temperature should be mentioned only if it is far outside the ideal range.\n"
-                "4. Humidity can be mentioned only if it is clearly uncomfortable.\n\n"
-                "5. Dont bother about their study duration.\n"
+                "4. Humidity can be mentioned only if it is clearly uncomfortable.\n"
+                "5. Completely ignore the study duration when giving advice. Do not judge or comment on how short or long the session was.\n\n"
 
                 "Instructions:\n"
                 "1. Start with exactly: Study Session Completed! Time: " + timeStr + "\n"
                 "2. On the next line, write exactly: Average Temperature and Humidity: "
                     + String(temp, 1) + " C, " + String(humidity, 1) + " %\n"
                 "3. On the next line, write exactly: Suggestions: \n"
-                "4. In Suggestions, praise the user briefly for finishing the session.\n"
+                "4. In Suggestions, praise the user warmly for finishing the session, regardless of how short it was.\n"
                 "5. Compare measured values against the ideal ranges silently, but mention only the biggest 1 issue, or 2 issues only if both are important.\n"
                 "6. Always prioritize bad lighting first, then noisy environment.\n"
                 "7. If light is bad, talk about light instead of sound unless sound is much worse.\n"
                 "8. Ignore temperature unless it is very far from ideal.\n"
                 "9. Give exactly one practical suggestion.\n"
                 "10. If conditions were generally good, say so clearly.\n"
-                "11. Keep the Suggestions text short, friendly, slightly Singlish, and natural. Not too corny.\n"
-                "12. If the environment is bad, you may lightly roast the user in a playful way, but keep it mild.\n"
+                "11. Keep the Suggestions text short, professional, encouraging, and natural.\n"
+                "12. Never tease, roast, or poke fun at the user.\n"
                 "13. Use exactly one emoji total.\n"
                 "14. No markdown, no bullet points, no asterisks.\n"
                 "15. Keep the whole reply concise.";

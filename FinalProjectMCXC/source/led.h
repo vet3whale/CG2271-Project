@@ -11,9 +11,9 @@
 #define BLUE_CV             LED_CV
 
 /* --- RED LED (PTE21) --- */
-#define RED_PORT            PORTE
-#define RED_PIN             29U
-#define RED_PORT_CLK        SIM_SCGC5_PORTE_MASK
+#define RED_PORT            PORTA
+#define RED_PIN             5U
+#define RED_PORT_CLK        SIM_SCGC5_PORTA_MASK
 #define RED_TPM             TPM0
 #define RED_TPM_CLK         SIM_SCGC6_TPM0_MASK
 #define RED_TPM_CHANNEL     2U
@@ -30,7 +30,7 @@
 
 /* --- BLUE LED (PTE22) --- */
 #define BLUE_PORT           PORTE
-#define BLUE_PIN            31U // intentionally cut off, kept if i want to use later
+#define BLUE_PIN            31U
 #define BLUE_PORT_CLK       SIM_SCGC5_PORTE_MASK
 #define BLUE_TPM            TPM2
 #define BLUE_TPM_CLK        SIM_SCGC6_TPM2_MASK

@@ -94,7 +94,7 @@ void vEnvTask(void *pvParameters)
                 (score == 0) ? ENV_GOOD :
                 (score <= 2) ? ENV_MODERATE :
                                ENV_POOR;
-            if (gSensorData.env_condition == ENV_POOR) gBuzzerRequest = BUZZ_LONG;
+            if (gSensorData.env_condition == ENV_POOR && gSensorData.on_off && !gSensorData.paused) gBuzzerRequest = BUZZ_LONG;
 
             if (score == 0) g_color_blend = 0;
             else if (score <= 2) g_color_blend = 40;
