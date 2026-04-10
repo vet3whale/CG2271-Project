@@ -5,45 +5,18 @@
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
 ../source/FinalProjectMCXC.c \
-../source/buzzer.c \
-../source/env_condition.c \
-../source/led.c \
-../source/light_sensor.c \
 ../source/mtb.c \
-../source/semihost_hardfault.c \
-../source/shared_data.c \
-../source/sound_sensor.c \
-../source/tap.c \
-../source/uart_rx.c \
-../source/uart_tx.c 
+../source/semihost_hardfault.c 
 
 C_DEPS += \
 ./source/FinalProjectMCXC.d \
-./source/buzzer.d \
-./source/env_condition.d \
-./source/led.d \
-./source/light_sensor.d \
 ./source/mtb.d \
-./source/semihost_hardfault.d \
-./source/shared_data.d \
-./source/sound_sensor.d \
-./source/tap.d \
-./source/uart_rx.d \
-./source/uart_tx.d 
+./source/semihost_hardfault.d 
 
 OBJS += \
 ./source/FinalProjectMCXC.o \
-./source/buzzer.o \
-./source/env_condition.o \
-./source/led.o \
-./source/light_sensor.o \
 ./source/mtb.o \
-./source/semihost_hardfault.o \
-./source/shared_data.o \
-./source/sound_sensor.o \
-./source/tap.o \
-./source/uart_rx.o \
-./source/uart_tx.o 
+./source/semihost_hardfault.o 
 
 
 # Each subdirectory must supply rules for building sources it contributes
@@ -58,7 +31,7 @@ source/%.o: ../source/%.c source/subdir.mk
 clean: clean-source
 
 clean-source:
-	-$(RM) ./source/FinalProjectMCXC.d ./source/FinalProjectMCXC.o ./source/buzzer.d ./source/buzzer.o ./source/env_condition.d ./source/env_condition.o ./source/led.d ./source/led.o ./source/light_sensor.d ./source/light_sensor.o ./source/mtb.d ./source/mtb.o ./source/semihost_hardfault.d ./source/semihost_hardfault.o ./source/shared_data.d ./source/shared_data.o ./source/sound_sensor.d ./source/sound_sensor.o ./source/tap.d ./source/tap.o ./source/uart_rx.d ./source/uart_rx.o ./source/uart_tx.d ./source/uart_tx.o
+	-$(RM) ./source/FinalProjectMCXC.d ./source/FinalProjectMCXC.o ./source/mtb.d ./source/mtb.o ./source/semihost_hardfault.d ./source/semihost_hardfault.o
 
 .PHONY: clean-source
 

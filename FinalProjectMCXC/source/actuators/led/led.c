@@ -1,9 +1,9 @@
 #include "led.h"
-#include "shared_data.h"
+#include "../../shared_data/shared_data.h"
 #include "fsl_debug_console.h"
 #include "FreeRTOS.h"
 #include "task.h"
-#include "uart_packet.h"
+#include "../../uart/uart_packet.h"
 
 void led_init(void)
 {

@@ -1,6 +1,6 @@
 #include "uart_tx.h"
-#include "shared_data.h"
-#include "uart_packet.h"
+#include "../../shared_data/shared_data.h"
+#include "../uart_packet.h"
 #include "FreeRTOS.h"
 #include "task.h"
 #include "semphr.h"

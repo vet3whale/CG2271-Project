@@ -1,55 +1,45 @@
 #include "dht_sensor.h"
 #include "shared_data.h"
-#include "uart_tx.h"            /* UART_TX_SendTemp() */
+#include "uart_tx.h" /* UART_TX_SendTemp() */
 #include <DHT.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 
-static DHT   sDHT(DHT_PIN, DHT11);
+static DHT sDHT(DHT_PIN, DHT11);
 
-/* ── Private helpers ─────────────────────────────────────────────────────── */
-static bool isValidReading(float temp, float humidity)
-{
-    if (isnan(temp) || isnan(humidity)) return false;
-    return true;
+static bool isValidReading(float temp, float humidity) {
+  if (isnan(temp) || isnan(humidity)) return false;
+  return true;
 }
 
-void DHT_Init(void)
-{
-    sDHT.begin();
-    Serial.println("Waiting for sensor to stabilise...");
-    delay(500);
-    Serial.println("Ready!");
-    Serial.println("─────────────────────────────");
+void DHT_Init(void) {
+  sDHT.begin();
+  delay(500); // to stabilise
 }
 
-void vDHTTask(void *pvParameters)
-{
-    (void)pvParameters;
+void vDHTTask(void *pvParameters) {
+  (void)pvParameters;
 
-    while (1) {
-        float humidity    = sDHT.readHumidity();
-        float temperature = sDHT.readTemperature();
+  while (1) {
+    float humidity = sDHT.readHumidity();
+    float temperature = sDHT.readTemperature();
 
-        if (!isValidReading(temperature, humidity)) {
-            Serial.println("Bad reading — retrying...");
-            vTaskDelay(pdMS_TO_TICKS(2000));
-            continue;
-        }
-        if (xSemaphoreTake(gSensorMutex, pdMS_TO_TICKS(100)) == pdTRUE) { 
-            gSensorData.esp_temp = temperature;
-            gSensorData.esp_humidity = humidity;
-            xSemaphoreGive(gSensorMutex);
-        }
+    if (!isValidReading(temperature, humidity)) continue;
 
-        /* Send temp to MCXC — this triggers vRXTask → gTempReadySem → vEnvTask */
-        int8_t  ti = (int8_t)temperature;
-        uint8_t tf = (uint8_t)((temperature - (float)ti) * 10.0f);
-        int8_t  hi = (int8_t)humidity;
-        uint8_t hf = (uint8_t)((humidity - (float)hi) * 10.0f);
-        UART_TX_SendTemp(ti, tf, hi, hf);
-
-        vTaskDelay(pdMS_TO_TICKS(DHT_POLL_MS));
+    if (xSemaphoreTake(gSensorMutex, pdMS_TO_TICKS(100)) == pdTRUE) {
+      gSensorData.esp_temp = temperature;
+      gSensorData.esp_humidity = humidity;
+      xSemaphoreGive(gSensorMutex);
     }
+
+    // convert temp and humidity from 16 bit to 8 bit
+    int8_t ti = (int8_t)temperature;
+    uint8_t tf = (uint8_t)((temperature - (float)ti) * 10.0f);
+    int8_t hi = (int8_t)humidity;
+    uint8_t hf = (uint8_t)((humidity - (float)hi) * 10.0f);
+    UART_TX_SendTemp(ti, tf, hi, hf);
+
+    vTaskDelay(pdMS_TO_TICKS(DHT_POLL_MS));
+  }
 }

@@ -12,6 +12,15 @@ RM := rm -rf
 -include utilities/debug_console/subdir.mk
 -include utilities/subdir.mk
 -include startup/subdir.mk
+-include source/uart/tx/subdir.mk
+-include source/uart/rx/subdir.mk
+-include source/shared_data/subdir.mk
+-include source/sensors/tap/subdir.mk
+-include source/sensors/sound_sensor/subdir.mk
+-include source/sensors/light_sensor/subdir.mk
+-include source/env_condition/subdir.mk
+-include source/actuators/led/subdir.mk
+-include source/actuators/buzzer/subdir.mk
 -include source/subdir.mk
 -include freertos/freertos-kernel/portable/MemMang/subdir.mk
 -include freertos/freertos-kernel/portable/GCC/ARM_CM0/subdir.mk

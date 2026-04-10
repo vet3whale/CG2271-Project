@@ -3,18 +3,18 @@
 #include "clock_config.h"
 #include "peripherals.h"
 #include "fsl_debug_console.h"
-#include "shared_data.h"
+#include "./shared_data/shared_data.h"
 #include "FreeRTOS.h"
 #include "task.h"
 
-#include "light_sensor.h"
-#include "tap.h"
-#include "led.h"
-#include "buzzer.h"
-#include "sound_sensor.h"
-#include "uart_tx.h"
-#include "uart_rx.h"
-#include "env_condition.h"
+#include "./sensors/light_sensor/light_sensor.h"
+#include "./sensors/tap/tap.h"
+#include "./actuators/led/led.h"
+#include "./actuators/buzzer/buzzer.h"
+#include "./sensors/sound_sensor/sound_sensor.h"
+#include "./uart/tx/uart_tx.h"
+#include "./uart/rx/uart_rx.h"
+#include "./env_condition/env_condition.h"
 
 // task priority levels
 #define TAPTASK_PRIORITY 4

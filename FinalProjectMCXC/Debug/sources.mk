@@ -24,6 +24,15 @@ freertos/freertos-kernel \
 freertos/freertos-kernel/portable/GCC/ARM_CM0 \
 freertos/freertos-kernel/portable/MemMang \
 source \
+source/actuators/buzzer \
+source/actuators/led \
+source/env_condition \
+source/sensors/light_sensor \
+source/sensors/sound_sensor \
+source/sensors/tap \
+source/shared_data \
+source/uart/rx \
+source/uart/tx \
 startup \
 utilities/debug_console \
 utilities \

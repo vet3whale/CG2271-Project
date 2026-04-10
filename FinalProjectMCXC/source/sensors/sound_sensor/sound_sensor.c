@@ -9,7 +9,7 @@
 #include "task.h"
 #include "semphr.h"
 #include "sound_sensor.h"
-#include "shared_data.h"
+#include "../../shared_data/shared_data.h"
 
  // Internal: ADC Self-Calibration
 static void adc_calibrate(void){
@@ -39,7 +39,6 @@ static void adc_calibrate(void){
     if ((ADC0->SC3 & ADC_SC3_CALF_MASK) != 0U)
     {
         ADC0->SC3 |= ADC_SC3_CALF_MASK;
-        // PRINTF("[ADC] Calibration FAILED\r\n");
         return;
     }
 

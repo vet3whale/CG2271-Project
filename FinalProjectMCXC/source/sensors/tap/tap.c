@@ -1,6 +1,6 @@
 #include "tap.h"
-#include "buzzer.h"
-#include "shared_data.h"
+#include "../../actuators/buzzer/buzzer.h"
+#include "../../shared_data/shared_data.h"
 #include "fsl_debug_console.h"
 #include "FreeRTOS.h"
 #include "task.h"
@@ -48,9 +48,8 @@ void vTapTask(void *pvParameters) {
 
     while (1) {
         // Block until first tap
-        if (xSemaphoreTake(gTapSemaphore, portMAX_DELAY) != pdTRUE) {
-            continue;
-        }
+        if (xSemaphoreTake(gTapSemaphore, portMAX_DELAY) != pdTRUE) continue;
+
         while (xSemaphoreTake(gTapSemaphore, 0) == pdTRUE);
         // Wait for possible second tap
         BaseType_t secondTap = xSemaphoreTake(gTapSemaphore, pdMS_TO_TICKS(TAP_DOUBLE_TAP_MS_UL));
@@ -62,9 +61,7 @@ void vTapTask(void *pvParameters) {
                 gSensorData.on_off ^= 1;
                 gBuzzerRequest = BUZZ_SHORT;
                 // Clear paused when turning off
-                if (!gSensorData.on_off) {
-                    gSensorData.paused = 0;
-                }
+                if (!gSensorData.on_off) gSensorData.paused = 0;
             } else {
                 // Single tap: pause only if on
                 if (gSensorData.on_off) {
@@ -74,9 +71,8 @@ void vTapTask(void *pvParameters) {
             }
             gSensorData.tap_event = 1;
             xSemaphoreGive(gSensorMutex);
-            if (xTxTaskHandle != NULL) {
-				xTaskNotifyGive(xTxTaskHandle);
-			}
+
+            if (xTxTaskHandle != NULL) xTaskNotifyGive(xTxTaskHandle);
         }
     }
 }

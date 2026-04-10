@@ -1,5 +1,5 @@
 #include "light_sensor.h"
-#include "shared_data.h"
+#include "../../shared_data/shared_data.h"
 #include "MCXC444.h"
 #include "fsl_debug_console.h"
 

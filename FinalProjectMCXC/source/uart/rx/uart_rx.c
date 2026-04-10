@@ -1,5 +1,5 @@
 #include "uart_rx.h"
-#include "shared_data.h"
+#include "../../shared_data/shared_data.h"
 #include "fsl_debug_console.h"
 #include "board.h"
 #include "queue.h"

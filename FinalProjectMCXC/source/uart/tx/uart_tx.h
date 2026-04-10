@@ -12,7 +12,7 @@
 #include "task.h"
 #include "board.h"
 #include "clock_config.h"
-#include "uart_packet.h"
+#include "../uart_packet.h"
 
 /* TX → PTD3, ALT3
  * RX → PTD2, ALT3

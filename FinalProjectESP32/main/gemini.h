@@ -4,7 +4,7 @@
 #include <Arduino.h>
 
 
-#define GEMINI_MODEL  "gemini-2.5-flash-lite"
+#define GEMINI_MODEL "gemini-2.5-flash-lite"
 
 void Gemini_Init(void);
 String postGemini(const String &prompt);
