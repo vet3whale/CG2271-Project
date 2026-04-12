@@ -50,10 +50,13 @@ void setup() {
     WiFi_Connect();
 
     xTaskCreate(vOLEDTask,     "OLED",     OLED_TASK_STACK_SIZE, NULL, OLED_TASK_PRIORITY, NULL);
-    xTaskCreate(vTelegramTask, "Telegram", 6144, NULL, 3, NULL);
+    if (xTaskCreate(vTelegramTask, "Telegram", 12288, NULL, 3, NULL) != pdPASS)
+        Serial.println("[ERROR] Telegram task creation FAILED — out of heap");
     xTaskCreate(vDHTTask,      "DHT",      2048, NULL, 2, NULL);
     xTaskCreate(vUartRxTask,   "UartRX",   2048, NULL, 4, NULL);
-    xTaskCreate(vGeminiTask,   "Gemini",   6144, NULL, 2, NULL);
+    if (xTaskCreate(vGeminiTask, "Gemini", 10240, NULL, 2, NULL) != pdPASS)
+        Serial.println("[ERROR] Gemini task creation FAILED — out of heap");
+    Serial.printf("[Heap] Free after task creation: %d bytes\n", esp_get_free_heap_size());
 }
 
 unsigned long lastPingTime = 0;

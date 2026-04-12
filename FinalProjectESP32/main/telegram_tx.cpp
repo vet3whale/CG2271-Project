@@ -11,7 +11,7 @@ static WiFiClientSecure client;
 static UniversalTelegramBot bot(BOT_TOKEN, client);
 
 /* ── Timing ──────────────────────────────────────────────────────────────── */
-#define BOT_POLL_MS           3000
+#define BOT_POLL_MS           1000
 #define TELEGRAM_COOLDOWN_MS  15000
 
 static unsigned long sLastTelegramSend = 0;
@@ -127,14 +127,19 @@ static void waitForPersonality() {
             return;
         }
 
-        int numNew = bot.getUpdates(bot.last_message_received + 1);
-        Serial.printf("[Telegram] waitForPersonality poll — %d new updates\n", numNew);
-        while (numNew) {
-            handleNewMessages(numNew);
-            numNew = bot.getUpdates(bot.last_message_received + 1);
+        if (xSemaphoreTake(gNetworkMutex, pdMS_TO_TICKS(3000)) == pdTRUE) {
+            int numNew = bot.getUpdates(bot.last_message_received + 1);
+            Serial.printf("[Telegram] waitForPersonality poll — %d new updates\n", numNew);
+            while (numNew) {
+                handleNewMessages(numNew);
+                numNew = bot.getUpdates(bot.last_message_received + 1);
+            }
+            xSemaphoreGive(gNetworkMutex);
         }
 
-        vTaskDelay(pdMS_TO_TICKS(1000));
+        if (sPersonalitySet) break;  // exit immediately once personality is chosen
+
+        vTaskDelay(pdMS_TO_TICKS(200));
     }
 
     Serial.println("[Telegram] Personality set — proceeding");
@@ -159,12 +164,13 @@ void vTelegramTask(void *pvParameters) {
     // here, so there is no cross-task contention on these objects.
     // gNetworkMutex is only used when sending the Gemini report to avoid
     // colliding with vGeminiTask's ESP32_AI_Connect calls.
+    Serial.println("[Telegram] Task started");
     client.setInsecure();
+    Serial.println("[Telegram] client.setInsecure done");
 
     // Wait for TLS stack to stabilise
     vTaskDelay(pdMS_TO_TICKS(3000));
-
-    bot_setup();
+    Serial.println("[Telegram] Delay done, sending startup message");
     vTaskDelay(pdMS_TO_TICKS(500));
 
     // Retry startup message up to 3 times
@@ -186,13 +192,17 @@ void vTelegramTask(void *pvParameters) {
     while (1) {
         unsigned long now = millis();
 
-        // Poll Telegram on a timed interval — library pattern
+        // Poll Telegram on a timed interval — must hold mutex to avoid colliding with vGeminiTask
         if (now - sLastPollTime > BOT_POLL_MS) {
             sLastPollTime = now;
-            int numNew = bot.getUpdates(bot.last_message_received + 1);
-            while (numNew) {
-                handleNewMessages(numNew);
-                numNew = bot.getUpdates(bot.last_message_received + 1);
+            if (xSemaphoreTake(gNetworkMutex, pdMS_TO_TICKS(5000)) == pdTRUE) {
+                int numNew = bot.getUpdates(bot.last_message_received + 1);
+                while (numNew) {
+                    handleNewMessages(numNew);
+                    numNew = bot.getUpdates(bot.last_message_received + 1);
+                }
+                client.stop();  // free the socket so Gemini can open its own connection
+                xSemaphoreGive(gNetworkMutex);
             }
         }
 
@@ -214,6 +224,7 @@ void vTelegramTask(void *pvParameters) {
                     Serial.println("[Telegram] Report send failed");
                 }
                 sLastTelegramSend = millis();
+                client.stop();  // free the socket after sending
                 xSemaphoreGive(gNetworkMutex);
             }
         }
