@@ -101,7 +101,7 @@ void vEnvTask(void *pvParameters) {
 			else if (score <= 2)
 				g_color_blend = 40;
 			else if (score <= 3)
-				g_color_blend = 70;
+				g_color_blend = 80;
 			else
 				g_color_blend = 100;
 

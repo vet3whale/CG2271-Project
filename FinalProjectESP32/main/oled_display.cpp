@@ -122,6 +122,14 @@ static void wrapGeminiText(const char* msg) {
   }
 }
 
+static void printCentered(const char* text, int y) {
+    int16_t x1, y1;
+    uint16_t w, h;
+    display.getTextBounds(text, 0, 0, &x1, &y1, &w, &h);
+    display.setCursor((SCREEN_WIDTH - w) / 2, y);
+    display.print(text);
+}
+
 static bool showGeminiScroll() {
   const int HEADER_H = 11; // size-1 header: 8px text + 3px gap
   const int TEXT_AREA_H = SCREEN_HEIGHT - HEADER_H; // 53px
@@ -136,7 +144,7 @@ static bool showGeminiScroll() {
   display.setTextSize(1);
   display.setTextColor(SSD1306_WHITE);
   display.setCursor(0, 0);
-  display.println("Study Coach:");
+  display.println("Baymax:");
   display.drawLine(0, 9, 127, 9, SSD1306_WHITE);
 
   display.setTextSize(1);
@@ -166,18 +174,46 @@ static bool showGeminiScroll() {
   return sScrollDone;
 }
 
+static void drawBaymax() {
+    // Body — large oval
+    display.fillCircle(40, 38, 20, SSD1306_WHITE);
+    // Head — smaller circle
+    display.fillCircle(40, 16, 10, SSD1306_WHITE);
+    // Eyes — two small black dots
+    display.fillCircle(37, 15, 2, SSD1306_BLACK);
+    display.fillCircle(43, 15, 2, SSD1306_BLACK);
+    // Eye line connecting them
+    display.drawLine(37, 15, 43, 15, SSD1306_BLACK);
+    // Left arm down
+    display.drawLine(20, 35, 10, 45, SSD1306_WHITE);
+    // Right arm down (mirrored from left)
+    display.drawLine(60, 35, 70, 45, SSD1306_WHITE);
+    // Legs
+    display.fillRect(33, 57, 8, 7, SSD1306_WHITE);
+    display.fillRect(43, 57, 8, 7, SSD1306_WHITE);
+}
+
+static void showIdle() {
+    display.clearDisplay();
+    drawBaymax();
+    display.setTextSize(1);
+    display.setTextColor(SSD1306_WHITE);
+    display.setCursor(75, 40);
+    display.println("Tap Me!");
+    display.display();
+}
+
 static void showLoading() {
-  display.clearDisplay();
-  display.setTextSize(1);
-  display.setTextColor(SSD1306_WHITE);
-
-  display.setCursor(25, 20);
-  display.println("Study Coach");
-
-  display.setCursor(30, 36);
-  display.println("Loading...");
-
-  display.display();
+    display.clearDisplay();
+    drawBaymax();
+    display.setTextSize(1);
+    display.setTextColor(SSD1306_WHITE);
+    display.setCursor(75, 22);
+    display.println("Baymax");
+    display.setCursor(75, 34);
+    display.println("Loading...");
+    display.setCursor(75, 44);
+    display.display();
 }
 
 // display states
@@ -253,19 +289,6 @@ static void showSummary(float temp, float hum) {
 
   display.display();
 }
-
-static void showIdle() {
-  display.clearDisplay();
-  display.setTextSize(1);
-  display.setTextColor(SSD1306_WHITE);
-  display.setCursor(15, 10);
-  display.println("No active session");
-  display.setCursor(22, 30);
-  display.println("Tap to start!");
-  display.drawRect(0, 0, 127, 63, SSD1306_WHITE);
-  display.display();
-}
-
 
 // Init
 void OLED_Init() {

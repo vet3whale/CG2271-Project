@@ -132,8 +132,7 @@ void vSoundTask(void *pvParameters)
             if (sample > peak)   peak   = sample;
             if (sample < trough) trough = sample;
 
-            uint16_t dev = (sample > baseline) ? (sample - baseline)
-                                               : (baseline - sample);
+            uint16_t dev = (sample > baseline) ? (sample - baseline) : 0;
             if (dev > TRIGGER_DELTA) aboveCount++;
         }
         NVIC_EnableIRQ(ADC0_IRQn);        /* restore for light ISR before release */
@@ -147,12 +146,13 @@ void vSoundTask(void *pvParameters)
         TickType_t now = xTaskGetTickCount();
 
         /* Count only a fresh trigger edge, with debounce cooldown */
-        if (triggered && !prevTriggered && (now - lastEventTick >= rearmTicks))
+        if (triggered && (now - lastEventTick >= rearmTicks))
         {
             triggerCount30s++;
             lastEventTick = now;
         }
         prevTriggered = triggered;
+
 
         /* Reset window counter every 30 s */
         if ((now - windowStart) >= windowTicks)

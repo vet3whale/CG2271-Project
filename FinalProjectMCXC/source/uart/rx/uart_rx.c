@@ -7,32 +7,27 @@
 QueueHandle_t xRxQueue = NULL;
 
 void initUART2_RX_Interrupts(void) {
-    // 1. Create the Queue to hold incoming bytes
+    // create the Queue to hold incoming bytes
     xRxQueue = xQueueCreate(16, sizeof(uint8_t));
 
-    // 2. Enable the Receiver Interrupt (RIE)
+    // enable the Interrupt for rx, set RIE bit in UART2_C2 register
     UART2->C2 |= UART_C2_RIE_MASK;
 
-    // 3. Enable the IRQ in the NVIC
-    // Note: MCXC444 uses UART2_FLEXIO_IRQn for UART2
+    // enable IRQ in the NVIC
     NVIC_SetPriority(UART2_FLEXIO_IRQn, 2);
     NVIC_EnableIRQ(UART2_FLEXIO_IRQn);
 }
 
-// The Interrupt Service Routine (ISR)
 void UART2_FLEXIO_IRQHandler(void) {
     uint8_t data;
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 
-    // Check if the Receive Data Register Full flag is set
+    // check if the Receive Data Register Full flag is set
     if (UART2->S1 & UART_S1_RDRF_MASK) {
-        data = UART2->D; // Reading D clears the flag
-
-        // Send byte to queue without blocking
+        data = UART2->D; // read data
         xQueueSendFromISR(xRxQueue, &data, &xHigherPriorityTaskWoken);
     }
 
-    // Yield if a higher priority task was woken by this data
     portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 
@@ -41,12 +36,10 @@ void vRXTask(void *pvParameters) {
     uint8_t b, start2;
 
     while (1) {
-        // 1. Block on the Queue until a byte arrives (PortMAX_DELAY = wait forever)
-        // This task now uses 0% CPU while waiting!
-        xQueueReceive(xRxQueue, &b, portMAX_DELAY);
+        xQueueReceive(xRxQueue, &b, portMAX_DELAY); // wait for queue, this task is dormant, till rx received
         if (b != PACKET_START1) continue;
 
-        // 2. Read START2
+        // read start2 from queue
         if (xQueueReceive(xRxQueue, &start2, pdMS_TO_TICKS(50)) != pdTRUE) continue;
 
         if (start2 == PACKET_START2) {
