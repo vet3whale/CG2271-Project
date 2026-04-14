@@ -40,18 +40,22 @@ int main(void) {
     led_init();
     buzzer_init();
     initUART2_RXTX(MCXC_UART_BAUD);
-    initUART2_RX_Interrupts();      // Enable the Queue and Interrupts
+    initUART2_RX_Interrupts(); // enable rx interrupts
 
-    xTaskCreate(LIGHT_SENSOR_Task, "Light",  configMINIMAL_STACK_SIZE+128, NULL, LIGHTTASK_PRIORITY, NULL);
+    // sensor tasks
+    xTaskCreate(vLightTask, "Light",  configMINIMAL_STACK_SIZE+128, NULL, LIGHTTASK_PRIORITY, NULL);
     xTaskCreate(vTapTask, "Tap", configMINIMAL_STACK_SIZE, NULL, TAPTASK_PRIORITY, NULL);
     xTaskCreate(vSoundTask, "Sound", configMINIMAL_STACK_SIZE, NULL, SOUNDTASK_PRIORITY, NULL);
 
+    // actuator tasks
     xTaskCreate(vLEDTask, "LED", configMINIMAL_STACK_SIZE, NULL, LEDTASK_PRIORITY, NULL);
     xTaskCreate(vBuzzerTask, "Buzzer", configMINIMAL_STACK_SIZE, NULL, BUZZERTASK_PRIORITY, NULL);
 
+    // rx/tx tasks
     xTaskCreate(vTxTask, "TXTask", configMINIMAL_STACK_SIZE+128, NULL, TXTASK_PRIORITY, NULL);
     xTaskCreate(vRXTask, "RXTask", configMINIMAL_STACK_SIZE, NULL, RXTASK_PRIORITY, NULL);
 
+    // env task to determine led colour
     xTaskCreate(vEnvTask, "EnvTask",configMINIMAL_STACK_SIZE+128, NULL, ENVTASK_PRIORITY, NULL);
 
     vTaskStartScheduler();

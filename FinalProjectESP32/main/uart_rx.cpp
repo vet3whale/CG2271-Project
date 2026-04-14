@@ -120,12 +120,12 @@ static void parseAndStore(uint8_t *pkt) {
     gSensorData.tap_event = tap;
     gSensorData.on_off = on_off;
     gSensorData.paused = paused;
-    gSensorData.light_raw = light;
+    gSensorData.light = light;
     gSensorData.temp = temp;
     gSensorData.temp_frac = temp_frac;
     gSensorData.hum = hum;
     gSensorData.hum_frac = hum_frac;
-    gSensorData.sound_raw = sound;
+    gSensorData.sound = sound;
     gSensorData.sound_triggered = triggered;
     gSensorData.env_condition = env_cond;
     gSensorData.session_duration_sec = s_total_focused_ms / 1000;

@@ -9,8 +9,8 @@ typedef struct {
 	uint8_t tap_event;
 	uint8_t on_off;
 	uint8_t paused;
-    uint16_t light_raw;
-    uint16_t sound_raw;
+    uint16_t light;
+    uint16_t sound;
     uint8_t  sound_triggered;
     int8_t   temperature;
     uint8_t  temp_frac;

@@ -15,6 +15,6 @@ extern volatile uint32_t lightResult;
 void initLightADC(void);
 void startLightADC(void);
 
-void LIGHT_SENSOR_Task(void *pvParameters);
+void vLightTask(void *pvParameters);
 
 #endif

@@ -13,16 +13,16 @@ void initLightADC(void)
     NVIC_DisableIRQ(ADC0_IRQn);
     NVIC_ClearPendingIRQ(ADC0_IRQn);
 
-    /* Disable SLCD — PTB1 is LCD_P1 */
+    // disable LCD on MCXC, port is prioritised to just adc from light sensor
     SIM->SCGC5 |=  SIM_SCGC5_SLCD_MASK;
     LCD->GCR   &= ~LCD_GCR_LCDEN_MASK;
     SIM->SCGC5 &= ~SIM_SCGC5_SLCD_MASK;
 
-    /* Enable clocks */
+    // enable clocks
     SIM->SCGC6 |= SIM_SCGC6_ADC0_MASK;
     SIM->SCGC5 |= SIM_SCGC5_PORTB_MASK;
 
-    /* PTB1 → pure analog, NO pull resistors */
+    // disable interrupts, no need pull resistors and selects set mux to ALT0
     PORTB->PCR[LIGHT_ADC_PIN] = 0U;
 
     /* Disable ADC module before configuration */
@@ -39,7 +39,8 @@ void initLightADC(void)
 
 void startLightADC(void)
 {
-    /* Single atomic write — triggers conversion with interrupt */
+    // select AD12 to start reading from the sensor, when ready,
+	// COCO creates an interrupt (enabled by AIEN)
     ADC0->SC1[0] = ADC_SC1_ADCH(LIGHT_ADC_CHANNEL) | ADC_SC1_AIEN_MASK;
 }
 
@@ -55,7 +56,7 @@ void ADC0_IRQHandler(void)
     portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 
-void LIGHT_SENSOR_Task(void *pvParameters)
+void vLightTask(void *pvParameters)
 {
     (void)pvParameters;
     uint16_t sample;
@@ -73,7 +74,7 @@ void LIGHT_SENSOR_Task(void *pvParameters)
             xSemaphoreGive(gADCMutex);
 
             if (xSemaphoreTake(gSensorMutex, pdMS_TO_TICKS(10)) == pdTRUE) {
-                gSensorData.light_raw = sample;
+                gSensorData.light = sample;
                 xSemaphoreGive(gSensorMutex);
             }
         }

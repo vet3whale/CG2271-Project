@@ -106,8 +106,8 @@ void vGeminiTask(void *pvParameters) {
       if (xSemaphoreTake(gSensorMutex, pdMS_TO_TICKS(100)) == pdTRUE) {
         temp = gSensorData.temp;
         humidity = gSensorData.hum;
-        light = gSensorData.light_raw;
-        sound = gSensorData.sound_raw;
+        light = gSensorData.light;
+        sound = gSensorData.sound;
         soundTriggered = gSensorData.sound_triggered;
         envCondition = gSensorData.env_condition;
         duration_sec = gSensorData.session_duration_sec;
