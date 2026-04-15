@@ -16,7 +16,7 @@ void TAP_Init(void) {
 	SIM->SCGC5 |= TAP_PORT_CLOCK_MASK;
 
 	TAP_PORT->PCR[TAP_PIN] = PORT_PCR_MUX(1) | PORT_PCR_PE_MASK
-	| PORT_PCR_PS_MASK | PORT_PCR_IRQC(0xA);
+	| PORT_PCR_PS_MASK | PORT_PCR_IRQC(0xA); // pullup is enabled, interrupt on falling-edge.
 
 	TAP_GPIO->PDDR &= ~(1u << TAP_PIN);
 
@@ -51,8 +51,7 @@ void vTapTask(void *pvParameters) {
 		if (xSemaphoreTake(gTapSemaphore, portMAX_DELAY) != pdTRUE)
 			continue;
 
-		while (xSemaphoreTake(gTapSemaphore, 0) == pdTRUE)
-			;
+		while (xSemaphoreTake(gTapSemaphore, 0) == pdTRUE);
 		// Wait for possible second tap
 		BaseType_t secondTap = xSemaphoreTake(gTapSemaphore,
 				pdMS_TO_TICKS(TAP_DOUBLE_TAP_MS_UL));
@@ -76,8 +75,8 @@ void vTapTask(void *pvParameters) {
 			gSensorData.tap_event = 1;
 			xSemaphoreGive(gSensorMutex);
 
-			if (xTxTaskHandle != NULL)
-				xTaskNotifyGive(xTxTaskHandle);
+			if (gTxSemaphore != NULL)
+				xSemaphoreGive(gTxSemaphore);
 		}
 	}
 }

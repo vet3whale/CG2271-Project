@@ -30,7 +30,7 @@ extern volatile SensorData_t gAverageSensorData;
 extern volatile int led_state;
 extern volatile uint8_t g_color_blend; // 0 = Green, 100 = Red
 extern volatile uint16_t soundTriggerCount30s;
-extern TaskHandle_t xTxTaskHandle; // used if u wanna immediately tx data
+extern SemaphoreHandle_t gTxSemaphore; // used if u wanna immediately tx data
 
 void vPrintTask(void *pvParameters);
 

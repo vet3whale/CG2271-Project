@@ -16,5 +16,5 @@ volatile int led_state = 0;
 volatile uint8_t g_color_blend = 0;
 volatile uint16_t soundTriggerCount30s = 0;
 
-TaskHandle_t xTxTaskHandle = NULL;
+SemaphoreHandle_t gTxSemaphore = NULL;
 

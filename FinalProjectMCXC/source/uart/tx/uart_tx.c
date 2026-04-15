@@ -79,8 +79,7 @@ void vTxTask(void *pvParameters) {
 	uint16_t light = 0, sound = 0;
 
 	while (1) {
-		/* Block up to 100ms for a notify from vEnvTask, or send periodically */
-		ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(200));
+		xSemaphoreTake(gTxSemaphore, pdMS_TO_TICKS(200));
 
 		// tx is only sent after all the gAverageSensorData is set, by env_condition task,
 		// which releases gSensorMutex

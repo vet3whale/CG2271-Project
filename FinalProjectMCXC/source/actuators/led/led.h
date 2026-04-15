@@ -8,7 +8,6 @@
 
 #define RED_CV              LED_CV
 #define GREEN_CV            LED_CV
-#define BLUE_CV             LED_CV
 
 /* --- RED LED (PTE21) --- */
 #define RED_PORT            PORTA
@@ -17,7 +16,7 @@
 #define RED_TPM             TPM0
 #define RED_TPM_CLK         SIM_SCGC6_TPM0_MASK
 #define RED_TPM_CHANNEL     2U
-#define RED_MUX             3U    // ALT3 = TPM1_CH1
+#define RED_MUX             3U    // ALT3 = TPM0_CH2
 
 /* --- GREEN LED (PTE20) --- */
 #define GREEN_PORT          PORTE
@@ -26,16 +25,7 @@
 #define GREEN_TPM           TPM0
 #define GREEN_TPM_CLK       SIM_SCGC6_TPM0_MASK
 #define GREEN_TPM_CHANNEL   3U
-#define GREEN_MUX           3U    // ALT3 = TPM1_CH0
-
-/* --- BLUE LED (PTE22) --- */
-#define BLUE_PORT           PORTE
-#define BLUE_PIN            31U
-#define BLUE_PORT_CLK       SIM_SCGC5_PORTE_MASK
-#define BLUE_TPM            TPM2
-#define BLUE_TPM_CLK        SIM_SCGC6_TPM2_MASK
-#define BLUE_TPM_CHANNEL    0U
-#define BLUE_MUX            3U    // ALT3 = TPM2_CH0
+#define GREEN_MUX           3U    // ALT3 = TPM0_CH3
 
 /* --- PWM / Timing Settings --- */
 #define LED_PWM_FREQ_HZ     1000U

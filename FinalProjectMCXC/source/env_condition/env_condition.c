@@ -78,32 +78,25 @@ void vEnvTask(void *pvParameters) {
 			uint8_t score = 0;
 
 			// use averaged temperature for condition
-			int8_t avg_temp = gAverageSensorData.temperature;
+			int8_t temp = gSensorData.temperature;
+			int8_t hum = gSensorData.humidity;
 
-			if (soundTriggerCount30s >= NOISY_TRIGGER_COUNT_30S)
-				score += 3;
-			if (light > LIGHT_TOO_DARK_THRESHOLD)
-				score += 2;
-			if (avg_temp > TEMP_TOO_HOT_CELSIUS)
-				score += 1;
-			if (avg_temp < TEMP_TOO_COLD_CELSIUS)
-				score += 1;
+			if (soundTriggerCount30s >= NOISY_TRIGGER_COUNT_30S) score += 3;
+			if (light > LIGHT_TOO_DARK_THRESHOLD) score += 2;
+			if (temp > TEMP_TOO_HOT_CELSIUS) score += 1;
+			if (temp < TEMP_TOO_COLD_CELSIUS) score += 1;
+			if (hum > HUM_TOO_HIGH) score += 1;
 
 			gSensorData.env_condition = (score == 0) ? ENV_GOOD :
-										(score <= 3) ? ENV_MODERATE :
-										ENV_POOR;
+										(score <= 3) ? ENV_MODERATE : ENV_POOR;
 			if (gSensorData.env_condition == ENV_POOR && gSensorData.on_off
 					&& !gSensorData.paused)
 				gBuzzerRequest = BUZZ_LONG;
 
-			if (score == 0)
-				g_color_blend = 0;
-			else if (score <= 2)
-				g_color_blend = 40;
-			else if (score <= 3)
-				g_color_blend = 80;
-			else
-				g_color_blend = 100;
+			if (score == 0) g_color_blend = 0;
+			else if (score <= 2) g_color_blend = 40;
+			else if (score <= 3) g_color_blend = 80;
+			else g_color_blend = 100;
 
 			gAverageSensorData.tap_event = gSensorData.tap_event;
 			gAverageSensorData.on_off = gSensorData.on_off;
@@ -118,8 +111,6 @@ void vEnvTask(void *pvParameters) {
 			xSemaphoreGive(gSensorMutex);
 		}
 
-		if (xTxTaskHandle != NULL) {
-			xTaskNotifyGive(xTxTaskHandle);
-		}
+		if (gTxSemaphore != NULL) xSemaphoreGive(gTxSemaphore);
 	}
 }

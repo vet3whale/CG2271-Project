@@ -35,6 +35,7 @@ int main(void) {
     gSensorMutex = xSemaphoreCreateMutex();
     gADCMutex = xSemaphoreCreateMutex();
     gTempReadySem = xSemaphoreCreateBinary();
+    gTxSemaphore = xSemaphoreCreateBinary();
 
     TAP_Init();
     led_init();
@@ -51,7 +52,7 @@ int main(void) {
     xTaskCreate(vLEDTask, "LED", configMINIMAL_STACK_SIZE, NULL, LEDTASK_PRIORITY, NULL);
     xTaskCreate(vBuzzerTask, "Buzzer", configMINIMAL_STACK_SIZE, NULL, BUZZERTASK_PRIORITY, NULL);
 
-    // rx/tx tasks
+	// rx/tx tasks
     xTaskCreate(vTxTask, "TXTask", configMINIMAL_STACK_SIZE+128, NULL, TXTASK_PRIORITY, NULL);
     xTaskCreate(vRXTask, "RXTask", configMINIMAL_STACK_SIZE, NULL, RXTASK_PRIORITY, NULL);
 
