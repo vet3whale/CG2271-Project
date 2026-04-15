@@ -36,12 +36,10 @@ static void build_packet(uint8_t tap, uint8_t on_off, uint8_t paused,
 
 static void uart2_send_blocking(const uint8_t *buf, uint32_t len) {
 	for (uint32_t i = 0; i < len; i++) {
-		while (!(UART2->S1 & UART_S1_TDRE_MASK)) {
-		}
+		while (!(UART2->S1 & UART_S1_TDRE_MASK));
 		UART2->D = buf[i];
 	}
-	while (!(UART2->S1 & UART_S1_TC_MASK)) {
-	}
+	while (!(UART2->S1 & UART_S1_TC_MASK));
 }
 
 void initUART2_RXTX(uint32_t baud_rate) {
@@ -49,27 +47,27 @@ void initUART2_RXTX(uint32_t baud_rate) {
 	SIM->SCGC4 |= SIM_SCGC4_UART2_MASK;
 	SIM->SCGC5 |= SIM_SCGC5_PORTE_MASK;
 
-	// Disable RX/TX momementarily
+	// disable RX/TX momementarily
 	UART2->C2 &= ~(UART_C2_TE_MASK | UART_C2_RE_MASK);
 
-	/* 3. PTE22 → UART2_TX (ALT4), PTE23 → UART2_RX (ALT4) */
+	// PTE22 → UART2_TX (ALT4), PTE23 → UART2_RX (ALT4)
 	PORTE->PCR[UART_TX_PIN] &= ~PORT_PCR_MUX_MASK;
 	PORTE->PCR[UART_TX_PIN] |= PORT_PCR_MUX(4);
 	PORTE->PCR[UART_RX_PIN] &= ~PORT_PCR_MUX_MASK;
 	PORTE->PCR[UART_RX_PIN] |= PORT_PCR_MUX(4);
 
-	/* 4. Baud rate */
+	// baud rate and clk setting
 	uint32_t bus_clk = CLOCK_GetBusClkFreq();
 	uint32_t sbr = (bus_clk + (baud_rate * 8)) / (baud_rate * 16);
 	UART2->BDH &= ~UART_BDH_SBR_MASK;
 	UART2->BDH |= (uint8_t) ((sbr >> 8) & UART_BDH_SBR_MASK);
 	UART2->BDL = (uint8_t) (sbr & 0xFF);
 
-	/* 5. 8N1 */
+	// 8N1
 	UART2->C1 &= ~(UART_C1_LOOPS_MASK | UART_C1_RSRC_MASK |
 	UART_C1_PE_MASK | UART_C1_M_MASK);
 
-	/* 6. Enable TX and RX */
+	// enable rx & tx
 	UART2->C2 |= (UART_C2_TE_MASK | UART_C2_RE_MASK);
 }
 

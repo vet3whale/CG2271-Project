@@ -90,7 +90,7 @@ void vEnvTask(void *pvParameters) {
 				score += 1;
 
 			gSensorData.env_condition = (score == 0) ? ENV_GOOD :
-										(score <= 2) ? ENV_MODERATE :
+										(score <= 3) ? ENV_MODERATE :
 										ENV_POOR;
 			if (gSensorData.env_condition == ENV_POOR && gSensorData.on_off
 					&& !gSensorData.paused)
