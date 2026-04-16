@@ -102,7 +102,7 @@ void vTxTask(void *pvParameters) {
 
 		build_packet(tap, on_off, paused, light, sound, triggered, env_cond,
 				temp, temp_frac, hum, hum_frac, packet);
-		uart2_send_blocking(packet, PACKET_LEN);
+		if (on_off || tap) uart2_send_blocking(packet, PACKET_LEN);
 		vTaskDelay(pdMS_TO_TICKS(10));
 	}
 }

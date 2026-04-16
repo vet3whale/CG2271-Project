@@ -136,7 +136,7 @@ static bool showGeminiScroll() {
   const int CHAR_H = 8; // size-2 font height
   const int LINE_GAP = 5; // extra gap between lines
   const int LINE_H = CHAR_H + LINE_GAP; // 20px per line
-  const int SCROLL_SPEED = 6;
+  const int SCROLL_SPEED = 4;
 
   display.clearDisplay();
 
